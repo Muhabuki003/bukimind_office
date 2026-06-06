@@ -179,7 +179,7 @@ header{flex-shrink:0;padding:10px 16px;background:rgba(10,18,28,.92);border-bott
    Or implement pollHermes() to fetch a JSON feed every few sec.
    ============================================================ */
 
-const DEMO_MODE = true;
+const DEMO_MODE = false;
 const TILE = 16;
 const GW = 24, GH = 15;            // grid size (tiles)
 const WORLD_W = GW*TILE, WORLD_H = GH*TILE;
@@ -641,8 +641,10 @@ function renderChips(){
 }
 
 /* ---------- INSPECTOR ---------- */
+let currentInspect=null;
 function inspect(id){
   const a=byId[id];
+  currentInspect=id;
   const el=document.getElementById('p-insp');
   el.innerHTML=`
     <div class="insp-head">
@@ -751,27 +753,75 @@ window.bukimind={
   agents:byId,
 };
 
-/* ---------- POLL HERMES (stub) ---------- */
+/* ---------- POLL STATUS.JSON (real data) ---------- */
+let lastEventKey='';
 async function pollHermes(){
-  // Example: fetch a JSON feed your Hermes cron writes, then drive the office.
-  // try{
-  //   const r=await fetch('/hermes-status.json',{cache:'no-store'});
-  //   const data=await r.json();
-  //   data.agents.forEach(x=>window.bukimind.updateAgent(x.id,{status:x.status,task:x.task,output:x.output}));
-  //   data.events?.forEach(e=>window.bukimind.log(e.agent,e.msg));
-  // }catch(e){}
+  try{
+    const r=await fetch('status.json?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok) return;
+    const data=await r.json();
+
+    // update agents
+    (data.agents||[]).forEach(x=>{
+      const a=byId[x.id]; if(!a) return;
+      const wasIdle=a.status==='idle';
+      if(x.task!==undefined) a.task=x.task;
+      if(x.output!==undefined) a.output=x.output;
+      if(x.bubble) a.setBubble(x.bubble, 4000);
+      if(x.status!==undefined && x.status!==a.status){
+        a.status=x.status;
+        // animate: idle->working walks to desk; ->done bubble
+        if(x.status==='working' && (a.state==='idle')){
+          a.goTo(a.seatX,a.seatY,()=>{a.state='working';a.seated=true;a.facing='up';});
+        }
+        if(x.status==='done'){ a.setBubble('Done ✓',3000); }
+      }
+    });
+    renderChips();
+    // refresh inspector if open on an agent
+    if(currentInspect) inspect(currentInspect);
+
+    // append new events to the log (dedupe by last)
+    const evs=data.events||[];
+    if(evs.length){
+      const key=JSON.stringify(evs[evs.length-1]);
+      if(key!==lastEventKey){
+        lastEventKey=key;
+        evs.slice(-6).forEach(e=>{
+          const a=Object.values(byId).find(g=>g.name.toUpperCase()===String(e.agent).toUpperCase());
+          log(e.agent, e.msg, a?a.color:'#5d7d96');
+        });
+      }
+    }
+
+    // metrics
+    if(data.metrics){
+      if(data.metrics.tasks!=null) document.getElementById('m-tasks').textContent=data.metrics.tasks;
+      if(data.metrics.prs!=null) document.getElementById('m-prs').textContent=data.metrics.prs;
+      const b=data.metrics.bars||{};
+      const map={loveflix:['b1','b1v'],bookistudio:['b2','b2v'],dropship:['b3','b3v'],content:['b4','b4v']};
+      Object.keys(map).forEach(k=>{ if(b[k]!=null){ document.getElementById(map[k][0]).style.width=b[k]+'%'; document.getElementById(map[k][1]).textContent=b[k]+'%'; }});
+    }
+
+    // "report to boss" animation when an agent flips to done since last poll
+    document.getElementById('zone-label').textContent='BUKISTUDIO HQ // LIVE';
+  }catch(e){ /* feed not ready yet — keep last state */ }
 }
-if(!DEMO_MODE) setInterval(pollHermes, 4000);
+if(!DEMO_MODE){ pollHermes(); setInterval(pollHermes, 5000); }
 
 /* ---------- BOOT ---------- */
 renderChips();
 inspect('orchestrator');
-setTimeout(()=>{ log('BUKIMIND','Office initialized',C.cyan); },200);
-setTimeout(()=>{ log('SYSTEM','Hermes gateway connected'); },700);
-setTimeout(()=>{ log('AUDIT','LoveFlix repo cloned — 847 files',C.blue); },1300);
-setTimeout(()=>{ log('RESEARCH','TikTok signal: 2.1M likes',C.purple); },2000);
-setTimeout(()=>{ log('CONTENT','Posted 3x to TikTok',C.green); },2700);
-setTimeout(()=>{ log('SYSTEM','WhatsApp + Telegram bridges live',C.green); },3400);
+if(DEMO_MODE){
+  setTimeout(()=>{ log('BUKIMIND','Office initialized',C.cyan); },200);
+  setTimeout(()=>{ log('SYSTEM','Hermes gateway connected'); },700);
+  setTimeout(()=>{ log('AUDIT','LoveFlix repo cloned — 847 files',C.blue); },1300);
+  setTimeout(()=>{ log('RESEARCH','TikTok signal: 2.1M likes',C.purple); },2000);
+  setTimeout(()=>{ log('CONTENT','Posted 3x to TikTok',C.green); },2700);
+  setTimeout(()=>{ log('SYSTEM','WhatsApp + Telegram bridges live',C.green); },3400);
+} else {
+  log('SYSTEM','Connecting to Hermes feed…',C.cyan);
+}
 </script>
 </body>
 </html>
