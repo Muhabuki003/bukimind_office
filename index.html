@@ -757,7 +757,7 @@ window.bukimind={
 let lastEventKey='';
 async function pollHermes(){
   try{
-    const r=await fetch('status.json?t='+Date.now(),{cache:'no-store'});
+    const r=await fetch('https://raw.githubusercontent.com/Muhabuki003/bukimind-status/main/status.json?t='+Date.now(),{cache:'no-store'});
     if(!r.ok) return;
     const data=await r.json();
 
