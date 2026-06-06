@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BUKIMIND // Virtual Office</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#05080d;--panel:#0a121c;--panel2:#0d1825;--border:#15293c;
+  --border2:#203a54;--cyan:#23e3ff;--blue:#3b82f6;--purple:#a855f7;--amber:#f5a623;
+  --green:#22e07a;--coral:#ff5d6c;--text:#dcefff;--text2:#5d7d96;--text3:#2a4860;
+  --mono:'Space Mono',monospace;--pixel:'Press Start 2P',monospace;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--mono);overflow:hidden;position:fixed;width:100%}
+#wrap{display:flex;flex-direction:column;height:100vh;height:100dvh}
+
+/* HEADER */
+header{flex-shrink:0;padding:10px 16px;background:rgba(10,18,28,.92);border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(12px);z-index:50}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:30px;height:30px;border:2px solid var(--cyan);display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 0 12px rgba(35,227,255,.3),inset 0 0 12px rgba(35,227,255,.1)}
+.brand-mark i{width:6px;height:6px;background:var(--cyan);box-shadow:0 0 6px var(--cyan);animation:blink 1.4s steps(2) infinite}
+.brand-name{font-family:var(--pixel);font-size:11px;color:var(--cyan);letter-spacing:1px;text-shadow:0 0 10px rgba(35,227,255,.5)}
+.brand-sub{font-size:8px;color:var(--text2);letter-spacing:2px;margin-top:3px}
+.hud{display:flex;align-items:center;gap:14px}
+.hud-pill{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text2)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+#clock{font-size:10px;color:var(--text2);letter-spacing:1px}
+
+/* STAGE */
+#stage{flex:1;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#0a141f 0%,#05080d 100%)}
+#game{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);image-rendering:pixelated;image-rendering:crisp-edges;cursor:pointer}
+#scanlines{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.12) 3px,rgba(0,0,0,.12) 4px);z-index:10;mix-blend-mode:multiply}
+#vignette{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 140px 30px rgba(0,0,0,.7);z-index:11}
+
+/* AGENT TABS (top of stage) */
+#agent-bar{position:absolute;top:10px;left:10px;right:10px;display:flex;gap:6px;z-index:20;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+#agent-bar::-webkit-scrollbar{display:none}
+.agent-chip{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(10,18,28,.85);border:1px solid var(--border2);border-radius:6px;cursor:pointer;backdrop-filter:blur(8px);transition:all .15s;white-space:nowrap}
+.agent-chip:hover{border-color:var(--text2);transform:translateY(-1px)}
+.agent-chip.boss{border-color:rgba(35,227,255,.4)}
+.chip-led{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.chip-name{font-size:9px;color:var(--text);letter-spacing:.5px}
+.chip-status{font-size:7px;letter-spacing:.5px;margin-top:2px}
+
+/* MINIMAP / TITLE label */
+#zone-label{position:absolute;bottom:10px;left:10px;font-family:var(--pixel);font-size:8px;color:var(--text3);letter-spacing:1px;z-index:20;pointer-events:none}
+
+/* BOTTOM CONSOLE */
+#console{flex-shrink:0;background:rgba(10,18,28,.95);border-top:1px solid var(--border2);backdrop-filter:blur(12px);z-index:40;display:flex;flex-direction:column;max-height:38vh}
+.console-tabs{display:flex;border-bottom:1px solid var(--border)}
+.ctab{flex:1;padding:9px;text-align:center;font-size:9px;letter-spacing:1px;color:var(--text2);cursor:pointer;border-right:1px solid var(--border);transition:all .15s;text-transform:uppercase}
+.ctab:last-child{border-right:none}
+.ctab.active{color:var(--cyan);background:rgba(35,227,255,.06);box-shadow:inset 0 -2px 0 var(--cyan)}
+.console-body{flex:1;overflow-y:auto;padding:10px 14px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.console-body::-webkit-scrollbar{width:6px}
+.console-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.cpanel{display:none}
+.cpanel.active{display:block;animation:fade .2s}
+
+/* LOG */
+.log-line{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid rgba(21,41,60,.5);font-size:11px;line-height:1.5}
+.log-line:last-child{border:none}
+.log-t{color:var(--text3);flex-shrink:0;font-size:9px;padding-top:1px}
+.log-agent{flex-shrink:0;font-weight:700;font-size:10px}
+.log-msg{color:var(--text2)}
+
+/* INSPECTOR */
+#insp-empty{color:var(--text3);font-size:11px;text-align:center;padding:20px}
+.insp-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.insp-av{width:40px;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--pixel);font-size:14px;flex-shrink:0}
+.insp-title{font-size:13px;color:var(--text);letter-spacing:.5px}
+.insp-role{font-size:9px;color:var(--text2);margin-top:3px;letter-spacing:1px}
+.insp-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.insp-stat{background:rgba(35,227,255,.04);border:1px solid var(--border);border-radius:6px;padding:8px}
+.insp-stat-l{font-size:8px;color:var(--text3);letter-spacing:1px;text-transform:uppercase}
+.insp-stat-v{font-size:13px;color:var(--cyan);margin-top:3px;font-weight:700}
+.insp-out{background:#060c12;border:1px solid var(--border);border-radius:6px;padding:10px;font-size:10px;line-height:1.7;white-space:pre-wrap;color:var(--text2);max-height:120px;overflow-y:auto}
+.insp-out .hl{color:var(--cyan)}.insp-out .ok{color:var(--green)}.insp-out .wn{color:var(--amber)}
+
+/* METRICS */
+.met-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.met{background:rgba(35,227,255,.04);border:1px solid var(--border);border-radius:6px;padding:9px;text-align:center}
+.met-v{font-family:var(--pixel);font-size:13px;color:var(--cyan)}
+.met-l{font-size:7px;color:var(--text3);margin-top:5px;letter-spacing:1px}
+.bar-row{margin-bottom:9px}
+.bar-top{display:flex;justify-content:space-between;font-size:9px;color:var(--text2);margin-bottom:4px;letter-spacing:.5px}
+.bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;transition:width 1s ease}
+
+/* TRIGGERS */
+.trig{width:100%;padding:11px;margin-bottom:8px;background:rgba(35,227,255,.05);border:1px solid var(--border2);border-radius:6px;color:var(--cyan);font-family:var(--mono);font-size:11px;letter-spacing:.5px;cursor:pointer;transition:all .15s;text-align:left;display:flex;align-items:center;gap:8px}
+.trig:hover{background:rgba(35,227,255,.12);border-color:var(--cyan)}
+.trig:active{transform:scale(.98)}
+.trig-ic{font-size:10px}
+
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:.2}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+@media(min-width:900px){
+  #wrap{flex-direction:row}
+  header{position:absolute;top:0;left:0;right:360px;border:none;background:transparent;z-index:60}
+  #stage{flex:1}
+  #console{max-height:none;height:100vh;height:100dvh;width:360px;border-top:none;border-left:1px solid var(--border2)}
+  #agent-bar{top:60px}
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <div class="brand">
+      <div class="brand-mark"><i></i></div>
+      <div>
+        <div class="brand-name">BUKIMIND</div>
+        <div class="brand-sub">VIRTUAL OFFICE</div>
+      </div>
+    </div>
+    <div class="hud">
+      <div class="hud-pill"><span class="live-dot"></span>ONLINE</div>
+      <div id="clock">--:--:--</div>
+    </div>
+  </header>
+
+  <div id="stage">
+    <div id="agent-bar"></div>
+    <canvas id="game"></canvas>
+    <div id="scanlines"></div>
+    <div id="vignette"></div>
+    <div id="zone-label">BUKISTUDIO HQ // FLOOR 1</div>
+  </div>
+
+  <div id="console">
+    <div class="console-tabs">
+      <div class="ctab active" data-tab="log">Activity</div>
+      <div class="ctab" data-tab="insp">Inspect</div>
+      <div class="ctab" data-tab="met">System</div>
+      <div class="ctab" data-tab="trig">Trigger</div>
+    </div>
+    <div class="console-body">
+      <div class="cpanel active" id="p-log"></div>
+      <div class="cpanel" id="p-insp"><div id="insp-empty">Tap an agent to inspect their work →</div></div>
+      <div class="cpanel" id="p-met">
+        <div class="met-grid">
+          <div class="met"><div class="met-v" id="m-tasks">47</div><div class="met-l">TASKS</div></div>
+          <div class="met"><div class="met-v">6</div><div class="met-l">AGENTS</div></div>
+          <div class="met"><div class="met-v" id="m-prs">12</div><div class="met-l">PRs</div></div>
+          <div class="met"><div class="met-v" id="m-up">0m</div><div class="met-l">UPTIME</div></div>
+        </div>
+        <div class="bar-row"><div class="bar-top"><span>LOVEFLIX AUDIT</span><span id="b1v">67%</span></div><div class="bar"><div class="bar-fill" id="b1" style="width:67%;background:var(--blue)"></div></div></div>
+        <div class="bar-row"><div class="bar-top"><span>BOOKISTUDIO PIPELINE</span><span id="b2v">34%</span></div><div class="bar"><div class="bar-fill" id="b2" style="width:34%;background:var(--amber)"></div></div></div>
+        <div class="bar-row"><div class="bar-top"><span>DROPSHIP SCANNER</span><span id="b3v">89%</span></div><div class="bar"><div class="bar-fill" id="b3" style="width:89%;background:var(--purple)"></div></div></div>
+        <div class="bar-row"><div class="bar-top"><span>SOCIAL CONTENT</span><span id="b4v">76%</span></div><div class="bar"><div class="bar-fill" id="b4" style="width:76%;background:var(--green)"></div></div></div>
+      </div>
+      <div class="cpanel" id="p-trig">
+        <button class="trig" onclick="window.bukimind.trigger('loveflix')"><span class="trig-ic">▶</span> Scan LoveFlix repo</button>
+        <button class="trig" onclick="window.bukimind.trigger('bookistudio')"><span class="trig-ic">▶</span> Check BookiStudio email</button>
+        <button class="trig" onclick="window.bukimind.trigger('dropship')"><span class="trig-ic">▶</span> Scan TikTok trends</button>
+        <button class="trig" onclick="window.bukimind.trigger('content')"><span class="trig-ic">▶</span> Post social content</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   BUKIMIND VIRTUAL OFFICE
+   Single-file pixel-art agent dashboard. Cloudflare-ready.
+   Inspired (design only) by Pixel Agents (pablodelucca, MIT).
+   All sprites drawn procedurally — no external assets.
+   ------------------------------------------------------------
+   TO WIRE TO HERMES (real data):
+     set DEMO_MODE = false, then push updates via:
+     window.bukimind.updateAgent('auditor', {status:'working', task:'...', output:'...'})
+     window.bukimind.log('AUDIT', 'Found 3 bugs')
+     window.bukimind.setBubble('auditor', 'Done!')
+   Or implement pollHermes() to fetch a JSON feed every few sec.
+   ============================================================ */
+
+const DEMO_MODE = true;
+const TILE = 16;
+const GW = 24, GH = 15;            // grid size (tiles)
+const WORLD_W = GW*TILE, WORLD_H = GH*TILE;
+
+const C = {
+  floor:'#1a2433', floorB:'#16202d', wallTop:'#2c3e54', wallFace:'#1c2a3a',
+  wallHi:'#3a5168', rug:'#13212e', rugEdge:'#1d3346',
+  cyan:'#23e3ff', blue:'#3b82f6', purple:'#a855f7', amber:'#f5a623',
+  green:'#22e07a', coral:'#ff5d6c',
+};
+
+/* ---------- AGENT DEFINITIONS ---------- */
+const AGENTS = [
+  { id:'orchestrator', name:'BUKIMIND', role:'ORCHESTRATOR', project:'ALL',
+    color:C.cyan, glyph:'⬡', boss:true, skin:'#e8b98c', hair:'#1a1a1a', shirt:C.cyan, pants:'#16202d',
+    status:'working', task:'Supervising all sub-agents',
+    output:`<span class="hl">// BUKIMIND CORE</span>\nSpawned 5 sub-agents across 3 projects.\nLoveFlix audit: <span class="hl">RUNNING</span>\nDropship scan: <span class="hl">RUNNING</span>\nBookiStudio: <span class="wn">AWAITING APPROVAL</span>\nAll systems nominal.` },
+  { id:'auditor', name:'Audit', role:'LOVEFLIX', project:'LOVEFLIX',
+    color:C.blue, glyph:'◈', skin:'#c98e6b', hair:'#3a2515', shirt:C.blue, pants:'#1a2433',
+    status:'working', task:'Scanning repo for dead routes',
+    output:`<span class="hl">// LOVEFLIX AUDIT AGENT</span>\nCloning loveflix-platform...\nScanning 847 files\n<span class="ok">+ 14 hardcoded strings</span>\n<span class="ok">+ 7 dead button handlers</span>\n<span class="ok">+ 3 missing routes</span>\nDrafting Telegram report for Am...` },
+  { id:'researcher', name:'Research', role:'TIKTOK', project:'DROPSHIP',
+    color:C.purple, glyph:'◎', skin:'#8d5a3c', hair:'#0d0d0d', shirt:C.purple, pants:'#1a2433',
+    status:'working', task:'Analyzing trending products',
+    output:`<span class="hl">// RESEARCH AGENT</span>\nScanning TikTok feed (14d)\nSignal: "Magnetic LED strip" 2.1M likes\nSignal: "Auto wine dispenser" 890K\nChecking TeamDrop stock...\n<span class="ok">Match: LED strip ✓</span>` },
+  { id:'builder', name:'Build', role:'BOOKISTUDIO', project:'BOOKISTUDIO',
+    color:C.amber, glyph:'◆', skin:'#e8b98c', hair:'#5a3a1a', shirt:C.amber, pants:'#1a2433',
+    status:'idle', task:'Awaiting plan approval',
+    output:`<span class="hl">// BUILD AGENT</span>\nStatus: IDLE\nWaiting: plan approval from Am\nLast build: Rayzor Sharp Barbershop\nQueue: intake #004` },
+  { id:'content', name:'Content', role:'SOCIAL', project:'DROPSHIP',
+    color:C.green, glyph:'◉', skin:'#b87a52', hair:'#1a1208', shirt:C.green, pants:'#1a2433',
+    status:'working', task:'Scheduling 8 posts',
+    output:`<span class="hl">// CONTENT AGENT</span>\nDownloaded 12 viral clips\n<span class="ok">+ Posted 3x to TikTok</span>\n<span class="ok">+ Cross-posted to IG Reels</span>\nNext post: 2h 14m\nTop: 48K views (6h)` },
+  { id:'qa', name:'QA', role:'TESTING', project:'LOVEFLIX',
+    color:C.coral, glyph:'◇', skin:'#d49a6a', hair:'#2a1a0a', shirt:C.coral, pants:'#1a2433',
+    status:'idle', task:'Awaiting build to test',
+    output:`<span class="hl">// QA AGENT</span>\nStatus: IDLE\nWaiting for Build Agent\nSuite: 47 checks ready\nCoverage target: 90%` },
+];
+
+/* ---------- DESK / SEAT LAYOUT (grid coords) ---------- */
+/* desk: top-left tile, width in tiles. seat: tile char sits (in front, below desk) */
+const DESKS = {
+  orchestrator:{ dx:9, dy:10, w:4, seatX:10, seatY:11, big:true },
+  auditor:    { dx:2,  dy:3, w:2, seatX:2,  seatY:4 },
+  researcher: { dx:7,  dy:3, w:2, seatX:7,  seatY:4 },
+  builder:    { dx:13, dy:3, w:2, seatX:13, seatY:4 },
+  content:    { dx:18, dy:3, w:2, seatX:18, seatY:4 },
+  qa:         { dx:2,  dy:8, w:2, seatX:2,  seatY:9 },
+};
+
+/* decor: type + tile pos */
+const DECOR = [
+  {t:'plant', x:1, y:13},{t:'plant', x:21, y:13},{t:'plant', x:21, y:2},
+  {t:'cooler', x:1, y:2},{t:'coffee', x:21, y:8},{t:'server', x:21, y:11},
+  {t:'bookshelf', x:18, y:8},
+];
+const KANBAN = {x:10, y:0, w:4};   // on top wall
+
+/* ---------- BUILD BLOCKED GRID ---------- */
+const blocked = Array.from({length:GH},()=>Array(GW).fill(false));
+for(let x=0;x<GW;x++){blocked[0][x]=true;blocked[1][x]=true;blocked[GH-1][x]=true;}
+for(let y=0;y<GH;y++){blocked[y][0]=true;blocked[y][GW-1]=true;}
+// door gap bottom
+blocked[GH-1][11]=false; blocked[GH-1][12]=false;
+// desks block their footprint (not seat)
+Object.values(DESKS).forEach(d=>{for(let i=0;i<d.w;i++) blocked[d.dy][d.dx+i]=true;});
+// decor footprints
+DECOR.forEach(d=>{ if(blocked[d.y]&&blocked[d.y][d.x]!==undefined) blocked[d.y][d.x]=true; });
+
+/* ---------- BFS PATHFINDING ---------- */
+function bfs(sx,sy,tx,ty){
+  if(sx===tx&&sy===ty) return [];
+  const key=(x,y)=>y*GW+x;
+  const q=[[sx,sy]]; const prev={}; prev[key(sx,sy)]=null; let head=0;
+  const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+  while(head<q.length){
+    const [cx,cy]=q[head++];
+    if(cx===tx&&cy===ty){
+      const path=[]; let cur=key(tx,ty);
+      while(cur!==null){ const px=cur%GW, py=Math.floor(cur/GW); path.push([px,py]); cur=prev[cur]; }
+      return path.reverse().slice(1);
+    }
+    for(const [dx,dy] of dirs){
+      const nx=cx+dx, ny=cy+dy;
+      if(nx<0||ny<0||nx>=GW||ny>=GH) continue;
+      if(blocked[ny][nx]) continue;
+      const k=key(nx,ny);
+      if(k in prev) continue;
+      prev[k]=key(cx,cy); q.push([nx,ny]);
+    }
+  }
+  return [];
+}
+
+const WANDER=[[11,7],[6,11],[15,12],[11,11],[8,7],[16,7]];
+
+/* ---------- AGENT RUNTIME ---------- */
+class Agent{
+  constructor(def){
+    Object.assign(this, def);
+    const d=DESKS[this.id];
+    this.seatX=d.seatX; this.seatY=d.seatY;
+    // start near door
+    this.tx=11; this.ty=13;
+    this.x=this.tx*TILE+TILE/2; this.y=this.ty*TILE+TILE/2;
+    this.facing='up'; this.frame=0; this.frameT=0;
+    this.path=[]; this.moveT=0;
+    this.state='spawn'; this.stateT=0;
+    this.seated=false;
+    this.bubble=null; this.bubbleT=0;
+    this.code=Array.from({length:5},()=>({w:4+Math.random()*9,c:this.color}));
+    // initial walk to seat
+    this.goTo(this.seatX,this.seatY, ()=>{ this.state='working'; this.seated=true; this.facing='up'; });
+  }
+  goTo(tx,ty,cb){
+    this.path=bfs(this.tx,this.ty,tx,ty);
+    this.pathCb=cb; this.seated=false;
+    this.state='walk';
+  }
+  setBubble(text,dur=3200){ this.bubble=text; this.bubbleT=dur; }
+  update(dt){
+    this.stateT+=dt;
+    if(this.bubbleT>0){ this.bubbleT-=dt; if(this.bubbleT<=0) this.bubble=null; }
+    // animate
+    this.frameT+=dt;
+    if(this.frameT>180){ this.frameT=0; this.frame=(this.frame+1)%2; }
+    // scrolling code on monitor when working
+    if(this.state==='working'&&Math.random()>0.7){
+      this.code.shift(); this.code.push({w:4+Math.random()*9,c:this.color});
+    }
+    if(this.state==='walk'){
+      if(this.path.length===0){
+        // arrived
+        this.tx=Math.round((this.x-TILE/2)/TILE); this.ty=Math.round((this.y-TILE/2)/TILE);
+        const cb=this.pathCb; this.pathCb=null; this.state='idle';
+        if(cb) cb();
+      } else {
+        const [ntx,nty]=this.path[0];
+        const targetX=ntx*TILE+TILE/2, targetY=nty*TILE+TILE/2;
+        const dx=targetX-this.x, dy=targetY-this.y;
+        const dist=Math.hypot(dx,dy);
+        const spd=0.045*dt;
+        if(Math.abs(dx)>Math.abs(dy)) this.facing=dx>0?'right':'left';
+        else this.facing=dy>0?'down':'up';
+        if(dist<spd){ this.x=targetX; this.y=targetY; this.tx=ntx; this.ty=nty; this.path.shift(); }
+        else { this.x+=dx/dist*spd; this.y+=dy/dist*spd; }
+      }
+    }
+  }
+}
+
+/* ---------- PIXEL DRAW HELPERS ---------- */
+let ctx, cw, ch;
+function px(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(x|0,y|0,w,h); }
+
+function shade(hex,amt){
+  const n=parseInt(hex.slice(1),16);
+  let r=(n>>16)+amt,g=((n>>8)&255)+amt,b=(n&255)+amt;
+  r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));
+  return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+}
+
+/* ---------- DRAW: FLOOR + WALLS ---------- */
+function drawFloor(){
+  for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){
+    if(y===0) continue;
+    const alt=(x+y)%2===0;
+    px(x*TILE,y*TILE,TILE,TILE, alt?C.floor:C.floorB);
+    // subtle tile seam
+    ctx.fillStyle='rgba(0,0,0,0.12)'; ctx.fillRect(x*TILE,y*TILE,TILE,1);
+  }
+  // rug under boss area
+  const r={x:8,y:9,w:6,h:4};
+  px(r.x*TILE,r.y*TILE,r.w*TILE,r.h*TILE,C.rug);
+  ctx.strokeStyle=C.rugEdge; ctx.lineWidth=2;
+  ctx.strokeRect(r.x*TILE+2,r.y*TILE+2,r.w*TILE-4,r.h*TILE-4);
+}
+function drawWalls(){
+  // top wall band (rows 0-1) with 3D face
+  for(let x=0;x<GW;x++){
+    px(x*TILE,0,TILE,TILE,C.wallTop);
+    px(x*TILE,TILE,TILE,TILE,C.wallFace);
+    px(x*TILE,TILE+TILE-3,TILE,3,shade(C.wallFace,-14));
+    ctx.fillStyle='rgba(255,255,255,0.04)'; ctx.fillRect(x*TILE,0,TILE,2);
+  }
+  // side + bottom thin walls
+  for(let y=2;y<GH;y++){
+    px(0,y*TILE,TILE,TILE,C.wallFace); px(0,y*TILE,2,TILE,C.wallTop);
+    px((GW-1)*TILE,y*TILE,TILE,TILE,C.wallFace); px((GW-1)*TILE+TILE-2,y*TILE,2,TILE,C.wallTop);
+  }
+  for(let x=1;x<GW-1;x++){
+    if(x===11||x===12) continue; // door
+    px(x*TILE,(GH-1)*TILE,TILE,TILE,C.wallFace);
+    px(x*TILE,(GH-1)*TILE,TILE,3,C.wallTop);
+  }
+  // door frame
+  px(11*TILE,(GH-1)*TILE,2*TILE,TILE,'#0a0f16');
+  px(11*TILE,(GH-1)*TILE,2*TILE,3,C.cyan);
+  ctx.fillStyle='rgba(35,227,255,0.15)'; ctx.fillRect(11*TILE,(GH-1)*TILE,2*TILE,TILE);
+}
+
+/* ---------- DRAW: KANBAN on wall ---------- */
+function drawKanban(){
+  const bx=KANBAN.x*TILE, by=2, bw=KANBAN.w*TILE, bh=TILE+8;
+  px(bx,by,bw,bh,'#0e1a26'); 
+  ctx.strokeStyle=C.border2||'#203a54'; ctx.lineWidth=1; ctx.strokeStyle='#2a4860';
+  ctx.strokeRect(bx+0.5,by+0.5,bw-1,bh-1);
+  // 3 columns of sticky notes
+  const cols=[C.coral,C.amber,C.green];
+  for(let c=0;c<3;c++){
+    for(let r=0;r<2;r++){
+      px(bx+6+c*(bw/3-2)+r*2, by+5+r*8, 6,5, cols[c]);
+    }
+  }
+}
+
+/* ---------- DRAW: DESKS ---------- */
+function drawDesk(agent){
+  const d=DESKS[agent.id];
+  const x=d.dx*TILE, y=d.dy*TILE, w=d.w*TILE;
+  // monitor (back edge, smaller y) showing scrolling code
+  const mw= d.big? 32 : 20, mx= x + (w-mw)/2, my= y-12;
+  // monitor stand
+  px(mx+mw/2-2, my+12, 4, 4, '#0d1620');
+  // screen body
+  px(mx-2,my-2,mw+4,16,'#05090e');
+  px(mx,my, mw,12, '#0a141d');
+  // scrolling code lines
+  agent.code.forEach((ln,i)=>{
+    if(i>=6) return;
+    px(mx+2, my+2+i*1.7, Math.min(ln.w,mw-4), 1, agent.color);
+  });
+  // screen glow
+  ctx.fillStyle=hexA(agent.color,0.10); ctx.fillRect(mx-3,my-3,mw+6,18);
+  // desk surface
+  px(x,y, w,TILE, '#2a1f15');
+  px(x,y, w,3, '#3a2c1d');
+  px(x,y+TILE-3, w,3, '#1c140d');
+  // desk side accent (project color strip)
+  px(x, y+TILE-2, w, 2, hexA(agent.color,0.5));
+  // keyboard
+  px(x+w/2-7, y+6, 14,4, '#11202d');
+  // desk lamp glow pool on floor
+  ctx.fillStyle=hexA(agent.color,0.05);
+  ctx.beginPath(); ctx.ellipse(x+w/2, y+TILE+6, w*0.7, 10, 0,0,Math.PI*2); ctx.fill();
+}
+function hexA(hex,a){
+  const n=parseInt(hex.slice(1),16);
+  return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`;
+}
+
+/* ---------- DRAW: CHAIR ---------- */
+function drawChair(seatX,seatY){
+  const x=seatX*TILE+TILE/2, y=seatY*TILE+TILE/2;
+  px(x-5,y-2,10,7,'#14202c');
+  px(x-5,y-7,10,5,'#1a2a38');
+  px(x-5,y-7,10,2,'#24384a');
+  px(x-5,y-7,10,2,'#24384a');
+}
+
+/* ---------- DRAW: DECOR ---------- */
+function drawDecor(d){
+  const x=d.x*TILE, y=d.y*TILE;
+  if(d.t==='plant'){
+    px(x+5,y+9,6,6,'#3a2418'); px(x+4,y+11,8,4,'#2c1b10');
+    px(x+5,y+2,6,8,'#1d6b3a'); px(x+3,y+5,4,5,'#23824a'); px(x+9,y+4,4,6,'#1a5e34');
+    px(x+6,y,4,5,'#28935a');
+  } else if(d.t==='cooler'){
+    px(x+4,y+6,8,9,'#dfe9f0'); px(x+5,y+1,6,6,'#7fd4ff'); 
+    ctx.fillStyle=hexA('#7fd4ff',0.4); ctx.fillRect(x+5,y+1,6,6);
+    px(x+4,y+9,8,2,'#aac0d0');
+  } else if(d.t==='coffee'){
+    px(x+4,y+4,9,11,'#1a2a38'); px(x+5,y+6,7,4,'#0a141d');
+    px(x+6,y+7,5,2,C.amber); px(x+5,y+11,7,2,'#2a3e52');
+    px(x+11,y+5,2,2,C.green);
+  } else if(d.t==='server'){
+    px(x+4,y+1,9,14,'#0d1620'); 
+    for(let i=0;i<4;i++){ px(x+5,y+3+i*3,7,2,'#152230'); px(x+10,y+3+i*3,1,1, i%2?C.green:C.amber); }
+  } else if(d.t==='bookshelf'){
+    px(x+2,y+2,13,13,'#2a1f15');
+    const bc=[C.coral,C.blue,C.amber,C.green,C.purple];
+    for(let i=0;i<5;i++) px(x+4+i*2,y+4,1.5,5,bc[i]);
+    for(let i=0;i<4;i++) px(x+4+i*2,y+10,1.5,4,bc[(i+2)%5]);
+  }
+}
+
+/* ---------- DRAW: CHARACTER ---------- */
+function drawAgent(a){
+  const x=a.x, y=a.y;
+  // shadow
+  ctx.fillStyle='rgba(0,0,0,0.3)';
+  ctx.beginPath(); ctx.ellipse(x, y+1, 5, 2.5, 0,0,Math.PI*2); ctx.fill();
+
+  const sk=a.skin, hr=a.hair, sh=a.shirt, pn=a.pants;
+  const f=a.frame;
+  const ox=x-5, oy=y-15; // origin top-left of 10x15 sprite (feet at y)
+
+  if(a.seated){
+    // seated, back to viewer (facing up toward monitor)
+    px(ox+2,oy+4,6,4,hr);            // back of head/hair
+    px(ox+1,oy+8,8,6,sh);            // shirt back
+    px(ox+1,oy+9,2,4,shade(sh,-20)); // arm L
+    px(ox+7,oy+9,2,4,shade(sh,-20)); // arm R
+    // typing motion: hands flicker forward
+    if(f===0){ px(ox+2,oy+13,2,2,sk); px(ox+6,oy+13,2,2,sk); }
+    else { px(ox+3,oy+13,2,2,sk); px(ox+5,oy+13,2,2,sk); }
+    if(a.boss){ px(ox+1,oy+3,8,1,a.color); } // boss crown line
+    return;
+  }
+
+  if(a.facing==='down'){
+    px(ox+2,oy+1,6,5,hr);             // hair
+    px(ox+2,oy+5,6,3,sk);             // face
+    px(ox+3,oy+6,1,1,'#0a0a0a'); px(ox+6,oy+6,1,1,'#0a0a0a'); // eyes
+    px(ox+2,oy+8,6,5,sh);             // torso
+    px(ox+1,oy+8,1,4,shade(sh,-20)); px(ox+8,oy+8,1,4,shade(sh,-20)); // arms
+    // legs walk
+    if(f===0){ px(ox+2,oy+13,2,2,pn); px(ox+6,oy+13,2,2,pn); }
+    else { px(ox+3,oy+13,2,2,pn); px(ox+5,oy+13,2,2,pn); }
+  } else if(a.facing==='up'){
+    px(ox+2,oy+1,6,6,hr);             // back of head
+    px(ox+2,oy+8,6,5,sh);
+    px(ox+1,oy+8,1,4,shade(sh,-20)); px(ox+8,oy+8,1,4,shade(sh,-20));
+    if(f===0){ px(ox+2,oy+13,2,2,pn); px(ox+6,oy+13,2,2,pn); }
+    else { px(ox+3,oy+13,2,2,pn); px(ox+5,oy+13,2,2,pn); }
+  } else {
+    // side (left default; mirror for right)
+    const flip=a.facing==='right';
+    const M=(bx,by,bw,bh,c)=>{ const fx= flip? (ox+10-(bx-ox)-bw):bx; px(fx,by,bw,bh,c); };
+    M(ox+2,oy+1,5,5,hr);
+    M(ox+3,oy+5,4,3,sk);
+    M(ox+5,oy+6,1,1,'#0a0a0a');       // eye
+    M(ox+2,oy+8,5,5,sh);
+    M(ox+3,oy+9,2,3,shade(sh,-15));   // arm
+    if(f===0){ M(ox+2,oy+13,2,2,pn); M(ox+5,oy+13,2,2,pn); }
+    else { M(ox+3,oy+13,2,2,pn); }
+  }
+  if(a.boss){ px(ox+2,oy,6,1,a.color); } // boss accent
+}
+
+/* ---------- SPEECH BUBBLE (screen space, crisp) ---------- */
+function drawBubble(a, sctx, S, offX, offY){
+  if(!a.bubble) return;
+  const sx=offX + a.x*S, sy=offY + (a.y-18)*S;
+  sctx.font='10px "Space Mono", monospace';
+  const tw=sctx.measureText(a.bubble).width;
+  const pad=8, bw=tw+pad*2, bh=22;
+  const bx=sx-bw/2, by=sy-bh;
+  sctx.fillStyle='rgba(12,20,30,0.96)';
+  roundRect(sctx,bx,by,bw,bh,6); sctx.fill();
+  sctx.strokeStyle=a.color; sctx.lineWidth=1.5; sctx.stroke();
+  // tail
+  sctx.fillStyle='rgba(12,20,30,0.96)';
+  sctx.beginPath(); sctx.moveTo(sx-4,by+bh-1); sctx.lineTo(sx+4,by+bh-1); sctx.lineTo(sx,by+bh+5); sctx.fill();
+  sctx.fillStyle='#dcefff'; sctx.textBaseline='middle'; sctx.textAlign='center';
+  sctx.fillText(a.bubble, sx, by+bh/2);
+}
+function roundRect(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
+
+/* ---------- NAMEPLATE (screen space) ---------- */
+function drawNameplate(a, sctx, S, offX, offY){
+  const d=DESKS[a.id];
+  const sx=offX + (d.dx*TILE + d.w*TILE/2)*S;
+  const sy=offY + (d.dy*TILE + TILE + 3)*S;
+  sctx.font='7px "Press Start 2P", monospace';
+  sctx.textAlign='center'; sctx.textBaseline='top';
+  sctx.fillStyle=a.color;
+  sctx.fillText(a.name.toUpperCase(), sx, sy);
+}
+
+/* ---------- PARTICLES ---------- */
+const dust=Array.from({length:30},()=>({x:Math.random()*WORLD_W,y:Math.random()*WORLD_H,s:Math.random()*0.004+0.001,o:Math.random()}));
+function drawDust(dt){
+  dust.forEach(p=>{ p.y-=p.s*dt; if(p.y<0)p.y=WORLD_H; p.o+=0.01; 
+    ctx.fillStyle=`rgba(120,180,220,${(Math.sin(p.o)*0.5+0.5)*0.12})`;
+    ctx.fillRect(p.x|0,p.y|0,1,1); });
+}
+
+/* ---------- SETUP ---------- */
+const agents = AGENTS.map(d=>new Agent(d));
+const byId={}; agents.forEach(a=>byId[a.id]=a);
+
+const canvas=document.getElementById('game');
+ctx=canvas.getContext('2d');
+const off=document.createElement('canvas'); off.width=WORLD_W; off.height=WORLD_H;
+const octx=off.getContext('2d');
+
+let S=2, offX=0, offY=0;
+function resize(){
+  const stage=document.getElementById('stage');
+  const rw=stage.clientWidth, rh=stage.clientHeight;
+  S=Math.max(1, Math.floor(Math.min(rw/WORLD_W, rh/WORLD_H)));
+  if(S*WORLD_W < rw*0.7) S=Math.min(rw/WORLD_W, rh/WORLD_H); // allow fractional fit on small screens
+  canvas.width=WORLD_W*S; canvas.height=WORLD_H*S;
+  canvas.style.width=(WORLD_W*S)+'px'; canvas.style.height=(WORLD_H*S)+'px';
+  offX=(rw-WORLD_W*S)/2; offY=(rh-WORLD_H*S)/2;
+}
+window.addEventListener('resize',resize); resize();
+
+/* ---------- RENDER LOOP ---------- */
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(50, now-last); last=now;
+  agents.forEach(a=>a.update(dt));
+
+  // draw world to offscreen
+  ctx.save();
+  // we draw directly on main ctx scaled — simpler & crisp
+  ctx.setTransform(S,0,0,S,0,0);
+  ctx.imageSmoothingEnabled=false;
+  ctx.clearRect(0,0,WORLD_W,WORLD_H);
+
+  drawFloor();
+  drawWalls();
+  drawKanban();
+  DECOR.forEach(drawDecor);
+
+  // chairs first
+  Object.values(DESKS).forEach(d=>drawChair(d.seatX,d.seatY));
+
+  // y-sort desks + agents for depth
+  const ents=[];
+  agents.forEach(a=>ents.push({y:a.y, kind:'agent', a}));
+  Object.keys(DESKS).forEach(id=>{ const d=DESKS[id]; ents.push({y:d.dy*TILE+TILE, kind:'desk', a:byId[id]}); });
+  ents.sort((p,q)=>p.y-q.y);
+  ents.forEach(e=>{ if(e.kind==='desk') drawDesk(e.a); else drawAgent(e.a); });
+
+  drawDust(dt);
+  ctx.restore();
+
+  // screen-space overlays (crisp text)
+  ctx.setTransform(1,0,0,1,0,0);
+  agents.forEach(a=>drawNameplate(a, ctx, S, 0, 0));
+  agents.forEach(a=>drawBubble(a, ctx, S, 0, 0));
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ---------- CLICK TO INSPECT ---------- */
+canvas.addEventListener('click',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)/S, my=(e.clientY-rect.top)/S;
+  let best=null,bd=1e9;
+  agents.forEach(a=>{ const d=Math.hypot(mx-a.x,my-(a.y-7)); if(d<bd&&d<12){bd=d;best=a;} });
+  if(best){ inspect(best.id); switchTab('insp'); }
+});
+
+/* ---------- AGENT CHIPS ---------- */
+function renderChips(){
+  const bar=document.getElementById('agent-bar');
+  bar.innerHTML=agents.map(a=>{
+    const sc=a.status==='working'?a.color:a.status==='done'?C.green:'#5d7d96';
+    return `<div class="agent-chip ${a.boss?'boss':''}" onclick="window.bukimind.inspect('${a.id}')">
+      <div class="chip-led" style="background:${sc};box-shadow:0 0 6px ${sc}"></div>
+      <div><div class="chip-name">${a.name}</div><div class="chip-status" style="color:${sc}">${a.status.toUpperCase()}</div></div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- INSPECTOR ---------- */
+function inspect(id){
+  const a=byId[id];
+  const el=document.getElementById('p-insp');
+  el.innerHTML=`
+    <div class="insp-head">
+      <div class="insp-av" style="background:${hexA(a.color,0.15)};color:${a.color}">${a.glyph}</div>
+      <div><div class="insp-title">${a.name} Agent</div><div class="insp-role">${a.role} // ${a.status.toUpperCase()}</div></div>
+    </div>
+    <div class="insp-meta">
+      <div class="insp-stat"><div class="insp-stat-l">Project</div><div class="insp-stat-v">${a.project}</div></div>
+      <div class="insp-stat"><div class="insp-stat-l">Status</div><div class="insp-stat-v" style="color:${a.status==='idle'?'#5d7d96':a.color}">${a.status}</div></div>
+    </div>
+    <div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:6px">CURRENT TASK</div>
+    <div style="font-size:11px;color:var(--text);margin-bottom:12px">${a.task}</div>
+    <div style="font-size:9px;color:var(--text3);letter-spacing:1px;margin-bottom:6px">LIVE OUTPUT</div>
+    <div class="insp-out">${a.output}</div>`;
+}
+
+/* ---------- ACTIVITY LOG ---------- */
+const logs=[];
+function log(agent,msg,color){
+  const n=new Date();
+  const t=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
+  logs.unshift({t,agent,msg,color:color||'#5d7d96'});
+  if(logs.length>60)logs.pop();
+  const el=document.getElementById('p-log');
+  el.innerHTML=logs.map(l=>`<div class="log-line"><span class="log-t">${l.t}</span><span class="log-agent" style="color:${l.color}">${l.agent}</span><span class="log-msg">${l.msg}</span></div>`).join('');
+}
+
+/* ---------- TABS ---------- */
+function switchTab(name){
+  document.querySelectorAll('.ctab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  document.querySelectorAll('.cpanel').forEach(p=>p.classList.toggle('active',p.id==='p-'+name));
+}
+document.querySelectorAll('.ctab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
+
+/* ---------- CLOCK + METRICS ---------- */
+let upMin=0, tasks=47, prs=12;
+setInterval(()=>{
+  const n=new Date();
+  document.getElementById('clock').textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
+},1000);
+setInterval(()=>{ upMin++; const h=Math.floor(upMin/60),m=upMin%60; document.getElementById('m-up').textContent=h>0?`${h}h${m}m`:`${m}m`; },60000);
+function bump(){
+  if(Math.random()>0.6){tasks++;document.getElementById('m-tasks').textContent=tasks;}
+  if(Math.random()>0.9){prs++;document.getElementById('m-prs').textContent=prs;}
+  ['b1','b2','b3','b4'].forEach((id,i)=>{
+    const base=[67,34,89,76][i]; const v=Math.min(100,Math.max(0,base+Math.floor((Math.random()-0.5)*6)));
+    document.getElementById(id).style.width=v+'%'; document.getElementById(id+'v').textContent=v+'%';
+  });
+}
+setInterval(bump,4500);
+
+/* ---------- DEMO BEHAVIOR: agents report to boss ---------- */
+const reportLines={
+  auditor:['Found 7 dead buttons','3 routes missing','14 hardcoded strings','Audit 67% done'],
+  researcher:['LED strip: 2.1M likes','TeamDrop match found','New trend detected','Sourcing 2 products'],
+  content:['Posted 3x to TikTok','48K views in 6h','Cross-posted to IG','8 posts scheduled'],
+};
+function doReport(){
+  if(!DEMO_MODE) return;
+  const pool=['auditor','researcher','content'];
+  const id=pool[Math.floor(Math.random()*pool.length)];
+  const a=byId[id];
+  if(a.state!=='working') return;
+  const line=reportLines[id][Math.floor(Math.random()*reportLines[id].length)];
+  // walk to boss, report, return
+  const boss=DESKS.orchestrator;
+  a.seated=false;
+  a.goTo(boss.seatX-1, boss.seatY, ()=>{
+    a.facing='right'; a.setBubble(line,3000);
+    byId.orchestrator.setBubble('Got it ✓',1800);
+    log(a.name.toUpperCase(), line, a.color);
+    setTimeout(()=>{
+      a.goTo(a.seatX,a.seatY, ()=>{ a.state='working'; a.seated=true; a.facing='up'; });
+    },3200);
+  });
+}
+if(DEMO_MODE) setInterval(doReport, 9000);
+
+/* ---------- MANUAL TRIGGERS ---------- */
+const triggerSeq={
+  loveflix:{agent:'auditor',lines:['Cloning LoveFlix repo...','Scanning 847 files','Found 3 new dead routes','Report sent to Am via Telegram']},
+  bookistudio:{agent:'builder',lines:['Checking founder@bookistudios.com','2 new inquiries found','Drafting approval msg','WhatsApp sent to Am']},
+  dropship:{agent:'researcher',lines:['Fetching TikTok feed...','High signal: 1.8M likes','Checking TeamDrop stock','Flagged for listing']},
+  content:{agent:'content',lines:['Downloading viral clips','Editing captions','Posted to TikTok + IG','Scheduled next 6 posts']},
+};
+function trigger(type){
+  const seq=triggerSeq[type]; if(!seq) return;
+  const a=byId[seq.agent];
+  if(a.status==='idle'){ a.status='working'; a.task=seq.lines[0]; renderChips(); 
+    if(a.state==='idle'||a.state==='spawn') a.goTo(a.seatX,a.seatY,()=>{a.state='working';a.seated=true;a.facing='up';});
+  }
+  a.setBubble('On it!',2000);
+  let i=0;
+  const iv=setInterval(()=>{
+    if(i<seq.lines.length){ log(a.name.toUpperCase(), seq.lines[i], a.color); a.task=seq.lines[i]; i++; }
+    else { clearInterval(iv); a.setBubble('Done ✓',2500); byId.orchestrator.setBubble('Nice work',1800); }
+  },1300);
+  switchTab('log');
+}
+
+/* ---------- PUBLIC API (wire Hermes here) ---------- */
+window.bukimind={
+  trigger, inspect, log, switchTab,
+  updateAgent(id,patch){ const a=byId[id]; if(!a)return; Object.assign(a,patch); renderChips(); if(patch.status==='working'){a.state==='idle'&&a.goTo(a.seatX,a.seatY,()=>{a.state='working';a.seated=true;a.facing='up';});} },
+  setBubble(id,text,dur){ byId[id]?.setBubble(text,dur); },
+  agents:byId,
+};
+
+/* ---------- POLL HERMES (stub) ---------- */
+async function pollHermes(){
+  // Example: fetch a JSON feed your Hermes cron writes, then drive the office.
+  // try{
+  //   const r=await fetch('/hermes-status.json',{cache:'no-store'});
+  //   const data=await r.json();
+  //   data.agents.forEach(x=>window.bukimind.updateAgent(x.id,{status:x.status,task:x.task,output:x.output}));
+  //   data.events?.forEach(e=>window.bukimind.log(e.agent,e.msg));
+  // }catch(e){}
+}
+if(!DEMO_MODE) setInterval(pollHermes, 4000);
+
+/* ---------- BOOT ---------- */
+renderChips();
+inspect('orchestrator');
+setTimeout(()=>{ log('BUKIMIND','Office initialized',C.cyan); },200);
+setTimeout(()=>{ log('SYSTEM','Hermes gateway connected'); },700);
+setTimeout(()=>{ log('AUDIT','LoveFlix repo cloned — 847 files',C.blue); },1300);
+setTimeout(()=>{ log('RESEARCH','TikTok signal: 2.1M likes',C.purple); },2000);
+setTimeout(()=>{ log('CONTENT','Posted 3x to TikTok',C.green); },2700);
+setTimeout(()=>{ log('SYSTEM','WhatsApp + Telegram bridges live',C.green); },3400);
+</script>
+</body>
+</html>
