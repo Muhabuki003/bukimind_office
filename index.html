@@ -934,11 +934,18 @@ async function pollHermes(){
     if(!r.ok) return;
     const data=await r.json();
     
-    // Update room data
+    // Update room data — with fallback for old flat format
     if(data.rooms){
       roomData = data.rooms;
-      hqChildren = Object.keys(roomData).filter(k=>k!=='hq'&&k!=='default');
+    } else if(data.agents && Array.isArray(data.agents)){
+      // Old flat status.json — migrate on the fly
+      roomData = {
+        "hq": {"name": "BUKIMIND HQ", "agents": [], "metrics": data.metrics || {tasks:0,prs:0,bars:{}}},
+        "main": {"name": "Main Room", "agents": data.agents, "metrics": data.metrics || {tasks:0,prs:0,bars:{}}}
+      };
+      data.current_room = "main";
     }
+    hqChildren = Object.keys(roomData).filter(k=>k!=='hq'&&k!=='default');
     
     // Handle room switch from server
     const newRoom = data.current_room || 'hq';
