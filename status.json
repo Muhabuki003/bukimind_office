@@ -1,20 +1,430 @@
 {
-  "updated": "2026-06-06T16:00:00Z",
-  "agents": [
-    { "id": "orchestrator", "status": "working", "task": "Supervising all sub-agents", "output": "// BUKIMIND CORE\nAll sub-agents online.\nLoveFlix audit running.\nDropship scan running." },
-    { "id": "auditor", "status": "working", "task": "Scanning LoveFlix repo", "output": "// AUDIT AGENT\nScanning 847 files\n+ 7 dead buttons\n+ 3 missing routes" },
-    { "id": "researcher", "status": "working", "task": "Analyzing TikTok trends", "output": "// RESEARCH AGENT\nSignal: LED strip 2.1M likes\nTeamDrop match found" },
-    { "id": "builder", "status": "idle", "task": "Awaiting plan approval", "output": "// BUILD AGENT\nStatus: IDLE\nWaiting on Am" },
-    { "id": "content", "status": "working", "task": "Scheduling posts", "output": "// CONTENT AGENT\nPosted 3x to TikTok\n48K views" },
-    { "id": "qa", "status": "idle", "task": "Awaiting build to test", "output": "// QA AGENT\nStatus: IDLE\n47 checks ready" }
-  ],
+  "updated": "2026-06-07T04:35:24Z",
+  "version": 5,
+  "current_room": "homework",
+  "rooms": {
+    "hq": {
+      "name": "BUKIMIND HQ",
+      "agents": [],
+      "metrics": {
+        "tasks": 83,
+        "prs": 3,
+        "rooms": 4,
+        "bars": {
+          "bukimind": 50,
+          "bookistudio": 45,
+          "loveflix": 72,
+          "dropship": 10
+        }
+      }
+    },
+    "bukimind": {
+      "name": "BUKIMIND HQ",
+      "agents": [
+        {
+          "id": "orchestrator",
+          "status": "working",
+          "task": "Supervising all rooms",
+          "output": "BUKIMIND CORE\n4 rooms active\nmulti-room office: LIVE\nEvents flowing: OK",
+          "action": "Overseeing office systems",
+          "currentFile": "index.html",
+          "snippet": "// 4 rooms active\n// All agents online",
+          "activity": "working",
+          "lastActive": "02:48:26",
+          "recentActivity": [
+            {
+              "ts": "23:45:00",
+              "desc": "Deployed multi-room office",
+              "file": "index.html"
+            },
+            {
+              "ts": "02:48:26",
+              "desc": "Monitoring agent activity",
+              "file": "index.html"
+            }
+          ]
+        },
+        {
+          "id": "system",
+          "status": "working",
+          "task": "Monitoring infrastructure",
+          "output": "Hermes gateway: OK\nStatus feed: live",
+          "action": "Monitoring infrastructure",
+          "currentFile": "functions/status.js",
+          "snippet": "const url = \"https://raw.githubusercontent.com/...\"\nconst response = await fetch(url)",
+          "activity": "working",
+          "lastActive": "02:48:26",
+          "recentActivity": [
+            {
+              "ts": "23:30:00",
+              "desc": "Status proxy running",
+              "file": "functions/status.js"
+            },
+            {
+              "ts": "02:48:26",
+              "desc": "Polling GitHub for updates",
+              "file": "functions/status.js"
+            }
+          ]
+        },
+        {
+          "id": "gateway",
+          "status": "working",
+          "task": "Bridge health check",
+          "output": "Telegram: connected\nWhatsApp: connected\nEmail: connected"
+        },
+        {
+          "id": "storage",
+          "status": "idle",
+          "task": "Standing by",
+          "output": "Supabase: online\nGitHub: connected"
+        },
+        {
+          "id": "deploy",
+          "status": "idle",
+          "task": "Awaiting build",
+          "output": "Cloudflare: ready\nWorkers: active"
+        },
+        {
+          "id": "metrics",
+          "status": "working",
+          "task": "Aggregating room data",
+          "output": "4 rooms active\nTotal agents: 24"
+        }
+      ],
+      "metrics": {
+        "tasks": 83,
+        "prs": 3,
+        "agents": 6,
+        "bars": {}
+      }
+    },
+    "bookistudio": {
+      "name": "BOOKISTUDIO Pipeline",
+      "agents": [
+        {
+          "id": "orchestrator",
+          "status": "working",
+          "task": "Managing client pipeline",
+          "output": "Pipeline: ACTIVE\n3 clients in queue\nStripe: live\nWebhook: deployed",
+          "action": "Managing client pipeline",
+          "currentFile": "prompts/intake-analyzer.md",
+          "snippet": "# Intake Analyzer Agent\nAnalyze new client inquiries from Supabase",
+          "activity": "working",
+          "lastActive": "02:48:26",
+          "recentActivity": [
+            {
+              "ts": "22:00:00",
+              "desc": "Set up Stripe products",
+              "file": "stripe-setup.js"
+            },
+            {
+              "ts": "22:30:00",
+              "desc": "Deployed webhook worker",
+              "file": "stripe-webhook-worker.js"
+            }
+          ]
+        },
+        {
+          "id": "intake",
+          "status": "working",
+          "task": "Monitoring inquiries",
+          "output": "Supabase: polling every 30m\n3 inquiries received",
+          "action": "Testing Peek system",
+          "currentFile": "index.html",
+          "snippet": "<div class=\"peek-code\">// Live code preview\\nfunction testPeek() {\\n  console.log(\"It works!\");\\n}</div>",
+          "activity": "working",
+          "lastActive": "02:58:00",
+          "recentActivity": [
+            {
+              "ts": "23:15:00",
+              "desc": "Last cron check: 0 new intakes",
+              "file": "check-intake.js"
+            },
+            {
+              "ts": "02:58:00",
+              "desc": "Pushed live peek data to test the new panel",
+              "file": "index.html"
+            }
+          ]
+        },
+        {
+          "id": "researcher",
+          "status": "idle",
+          "task": "Awaiting intake",
+          "output": "Ready for next project"
+        },
+        {
+          "id": "planner",
+          "status": "idle",
+          "task": "Awaiting approval",
+          "output": "Plan drafted for #004"
+        },
+        {
+          "id": "builder",
+          "status": "idle",
+          "task": "Awaiting plan approval",
+          "output": "Stack: Cloudflare + HTML/CSS"
+        },
+        {
+          "id": "qa",
+          "status": "idle",
+          "task": "Awaiting build",
+          "output": "47 checks ready"
+        }
+      ],
+      "metrics": {
+        "tasks": 12,
+        "prs": 0,
+        "agents": 6,
+        "bars": {
+          "intake": 30,
+          "build": 0,
+          "qa": 0
+        }
+      }
+    },
+    "loveflix": {
+      "name": "Loveflix",
+      "agents": [
+        {
+          "id": "orchestrator",
+          "status": "working",
+          "task": "Fixing top 3 audit issues",
+          "output": "Audit fixes in progress\\nTarget: story map button removal\\nTarget: dead button handlers\\nTarget: hardcoded strings",
+          "bubble": "Fixing"
+        },
+        {
+          "id": "auditor",
+          "status": "done",
+          "task": "Scanning for dead routes",
+          "output": "Scanning 847 files\n14 hardcoded strings found\nReport drafted",
+          "action": "Fixed sender display name bug",
+          "currentFile": "chat.html",
+          "snippet": "const displayName = (m.sender_id === partnerId) ? partnerName : meName;\\nlabel.textContent = displayName || m.sender_name;",
+          "activity": "idle",
+          "lastActive": "03:02:37",
+          "recentActivity": [
+            {
+              "ts": "23:00:00",
+              "desc": "Audit complete: 3 issues found",
+              "file": "home.html"
+            },
+            {
+              "ts": "23:05:00",
+              "desc": "Verified 9 new pages deployed",
+              "file": "loveflix.report"
+            },
+            {
+              "ts": "03:01:32",
+              "desc": "User reports: emails showing instead of display names in messages",
+              "file": "loveflix_chat.html"
+            },
+            {
+              "ts": "03:02:37",
+              "desc": "Patched renderMsg() — uses meName/partnerName from settings instead of m.sender_name (which stored email)",
+              "file": "chat.html"
+            }
+          ]
+        },
+        {
+          "id": "deployer",
+          "status": "done",
+          "task": "PR #130 merged",
+          "output": "WebSocket fallback: deployed\nMessage notifications: working"
+        },
+        {
+          "id": "tester",
+          "status": "idle",
+          "task": "Awaiting next PR",
+          "output": "Test suite: 47 checks\nReady for next deploy"
+        },
+        {
+          "id": "monitor",
+          "status": "working",
+          "task": "Watching production",
+          "output": "Uptime: 99.8%\nStream health: OK\nActive users: 12"
+        },
+        {
+          "id": "docs",
+          "status": "idle",
+          "task": "Docs up to date",
+          "output": "API docs: current\nChangelog: up to date"
+        }
+      ],
+      "metrics": {
+        "tasks": 58,
+        "prs": 3,
+        "agents": 6,
+        "bars": {
+          "audit": 72,
+          "deploy": 90,
+          "monitor": 98,
+          "docs": 40
+        }
+      }
+    },
+    "dropship": {
+      "name": "Dropship Pipeline",
+      "agents": [
+        {
+          "id": "orchestrator",
+          "status": "working",
+          "task": "Managing full dropship pipeline",
+          "output": "Pipeline: INITIALIZED\n11 files built\nAwaiting API credentials"
+        },
+        {
+          "id": "discovery",
+          "status": "idle",
+          "task": "Awaiting TikTok API",
+          "output": "Trend scanner: INACTIVE"
+        },
+        {
+          "id": "sourcing",
+          "status": "idle",
+          "task": "Awaiting discovery",
+          "output": "TeamDrop: STANDBY"
+        },
+        {
+          "id": "builder",
+          "status": "idle",
+          "task": "Awaiting sourced product",
+          "output": "Store builder: IDLE"
+        },
+        {
+          "id": "social",
+          "status": "idle",
+          "task": "Awaiting store",
+          "output": "Social: STANDBY"
+        },
+        {
+          "id": "analytics",
+          "status": "idle",
+          "task": "Awaiting data",
+          "output": "Analytics: STANDBY"
+        }
+      ],
+      "metrics": {
+        "tasks": 9,
+        "prs": 0,
+        "agents": 6,
+        "bars": {
+          "store": 25
+        }
+      }
+    },
+    "homework": {
+      "name": "Homework // Visual Basics",
+      "agents": [
+        {
+          "id": "tutor",
+          "status": "idle",
+          "task": "Ready to help with Visual Basics",
+          "output": "TUTOR\nSummer course: Visual Basics\nReady for your first question!",
+          "activity": "idle",
+          "action": "Room ready — waiting for your Visual Basics materials",
+          "currentFile": "status.json",
+          "snippet": "Dim greeting As String = \"Ready to help!\"\\nConsole.WriteLine(greeting)",
+          "lastActive": "04:35:24",
+          "recentActivity": [
+            {
+              "ts": "04:35:24",
+              "desc": "Homework // Visual Basics room created with 5 agents: Tutor, Coder, Debugger, Explainer, Reference",
+              "file": "status.json"
+            }
+          ]
+        },
+        {
+          "id": "coder",
+          "status": "idle",
+          "task": "Writing Visual Basic solutions",
+          "output": "CODER\nStatus: IDLE\nWaiting for assignment specs",
+          "activity": "idle",
+          "action": "Standing by",
+          "currentFile": "—",
+          "snippet": "",
+          "lastActive": "04:35:13",
+          "recentActivity": []
+        },
+        {
+          "id": "debugger",
+          "status": "idle",
+          "task": "Ready to debug your code",
+          "output": "DEBUGGER\nStatus: IDLE\nPaste code and I will find the bug",
+          "activity": "idle",
+          "action": "Standing by",
+          "currentFile": "—",
+          "snippet": "",
+          "lastActive": "04:35:13",
+          "recentActivity": []
+        },
+        {
+          "id": "explainer",
+          "status": "idle",
+          "task": "Breaks concepts down step by step",
+          "output": "EXPLAINER\nStatus: IDLE\nReady to explain any Visual Basic concept",
+          "activity": "idle",
+          "action": "Standing by",
+          "currentFile": "—",
+          "snippet": "",
+          "lastActive": "04:35:13",
+          "recentActivity": []
+        },
+        {
+          "id": "reference",
+          "status": "idle",
+          "task": "Course materials & syntax lookup",
+          "output": "REFERENCE\nStatus: IDLE\nUpload your PowerPoints and I will index them",
+          "activity": "idle",
+          "action": "Standing by",
+          "currentFile": "—",
+          "snippet": "",
+          "lastActive": "04:35:13",
+          "recentActivity": []
+        }
+      ],
+      "metrics": {
+        "tasks": 0,
+        "prs": 0,
+        "agents": 5,
+        "bars": {
+          "progress": 0
+        }
+      }
+    }
+  },
   "events": [
-    { "agent": "BUKIMIND", "msg": "Office initialized" },
-    { "agent": "AUDIT", "msg": "LoveFlix repo cloned" }
-  ],
-  "metrics": {
-    "tasks": 47,
-    "prs": 12,
-    "bars": { "loveflix": 67, "bookistudio": 34, "dropship": 89, "content": 76 }
-  }
+    {
+      "agent": "AUDIT",
+      "msg": "Fixing top 3 audit issues — starting with story map button"
+    },
+    {
+      "agent": "SYSTEM",
+      "msg": "🗑️ Cron job removed — rooms are permanent now"
+    },
+    {
+      "agent": "SYSTEM",
+      "msg": "Renamed Loveflix room — switched to it"
+    },
+    {
+      "agent": "BUILD",
+      "msg": "Dropship prompts + templates + docs built — 11 files"
+    },
+    {
+      "agent": "BUKIMIND",
+      "msg": "🏗️ New project: Dropship Pipeline"
+    },
+    {
+      "agent": "BUKIMIND",
+      "msg": "🎉 Multi-room office live: HQ + 3 rooms"
+    },
+    {
+      "agent": "BUKIMIND",
+      "msg": "New project: Homework // Visual Basics"
+    },
+    {
+      "agent": "TUTOR",
+      "msg": "☕ Ready when you are — share your first question or PPT!"
+    }
+  ]
 }
