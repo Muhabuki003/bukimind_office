@@ -121,9 +121,40 @@ header{flex-shrink:0;padding:8px 14px;background:rgba(10,18,28,.92);border-botto
 .trig:hover{background:rgba(35,227,255,.12);border-color:var(--cyan)}
 .trig:active{transform:scale(.98)}
 .trig-ic{font-size:9px}
-@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:.2}}
+@keyframes blink{0%,49%{opacity:1}50%,99%{opacity:.2}100%{opacity:1}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes deskZoom{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
+@keyframes itemSlide{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+/* DESK ZOOM OVERLAY */
+#desk-zoom{position:fixed;inset:0;z-index:999;display:none;background:rgba(5,8,13,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:deskZoom .35s cubic-bezier(.22,1,.36,1);cursor:pointer}
+#desk-zoom.open{display:flex;align-items:center;justify-content:center}
+#desk-top{position:relative;width:min(780px,90vw);height:min(480px,70vh);background:linear-gradient(160deg,#2a2238,#3a3048,#2e263c);border-radius:14px;border:1px solid rgba(255,255,255,.08);box-shadow:0 24px 80px rgba(0,0,0,.6);overflow:hidden;cursor:default;animation:deskZoom .4s cubic-bezier(.22,1,.36,1)}
+#desk-top::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 48px,rgba(255,255,255,.012) 48px,rgba(255,255,255,.012) 49px);pointer-events:none}
+.desk-top-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.06);position:relative;z-index:1}
+.desk-top-title{font-family:'Press Start 2P',monospace;font-size:8px;color:#23e3ff;letter-spacing:1px;text-shadow:0 0 10px rgba(35,227,255,.3)}
+.desk-top-title span{color:rgba(255,255,255,.2);font-family:'Space Mono',monospace}
+.desk-top-close{width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,.06);background:rgba(255,70,70,.08);color:rgba(255,255,255,.4);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit}
+.desk-top-close:hover{background:rgba(255,70,70,.2);border-color:rgba(255,70,70,.3);color:#ff5d6c}
+.desk-items-wrap{position:relative;z-index:1;padding:16px 20px;overflow-y:auto;height:calc(100% - 52px);display:flex;flex-wrap:wrap;gap:14px;align-content:flex-start;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.06) transparent}
+.desk-items-wrap::-webkit-scrollbar{width:4px}
+.desk-items-wrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:3px}
+.desk-item-card{width:130px;padding:12px 10px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:8px;cursor:pointer;transition:all .25s;animation:itemSlide .4s cubic-bezier(.22,1,.36,1) both}
+.desk-item-card:hover{transform:translateY(-3px);background:rgba(35,227,255,.06);border-color:rgba(35,227,255,.2);box-shadow:0 8px 24px rgba(35,227,255,.08)}
+.desk-item-card:active{transform:translateY(-1px) scale(.97)}
+.desk-item-ic{font-size:26px;display:block;margin-bottom:6px}
+.desk-item-title{font-size:10px;color:rgba(255,255,255,.75);margin-bottom:4px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-family:'Space Mono',monospace}
+.desk-item-meta{font-size:8px;color:rgba(255,255,255,.2);display:flex;justify-content:space-between;align-items:center}
+.desk-item-badge{padding:1px 6px;border-radius:3px;font-size:7px;text-transform:uppercase;letter-spacing:.5px;font-family:'Space Mono',monospace}
+.desk-item-badge.doc{background:rgba(35,227,255,.12);color:#23e3ff}
+.desk-item-badge.pdf{background:rgba(255,70,70,.12);color:#ff5d6c}
+.desk-item-badge.img{background:rgba(34,224,122,.12);color:#22e07a}
+.desk-item-badge.code{background:rgba(245,166,35,.12);color:#f5a623}
+.desk-item-badge.audio{background:rgba(168,85,247,.12);color:#a855f7}
+.desk-item-badge.other{background:rgba(255,255,255,.04);color:rgba(255,255,255,.2)}
+.desk-empty-items{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:rgba(255,255,255,.08);z-index:1;pointer-events:none}
+.desk-empty-items .dei-ic{font-size:40px;margin-bottom:8px;display:block}
+.desk-empty-items .dei-txt{font-family:'Press Start 2P',monospace;font-size:7px;letter-spacing:1px}
 @media(min-width:900px){
   #wrap{flex-direction:row}
   header{position:absolute;top:0;left:0;right:360px;border:none;background:transparent;z-index:60}
@@ -186,6 +217,7 @@ header{flex-shrink:0;padding:8px 14px;background:rgba(10,18,28,.92);border-botto
         <button class="trig" onclick="window.bukimind.trigger('loveflix')"><span class="trig-ic">▶</span> Scan LoveFlix repo</button>
         <button class="trig" onclick="window.bukimind.trigger('bookistudio')"><span class="trig-ic">▶</span> Check BookiStudio pipeline</button>
         <button class="trig" onclick="window.bukimind.trigger('hq')"><span class="trig-ic">▶</span> Return to HQ</button>
+        <button class="trig" onclick="openDeskZoom()"><span class="trig-ic">🗄️</span> View Boss Desk</button>
       </div>
       <div class="cpanel" id="p-peek">
         <div class="peek-head" id="peek-head">
@@ -221,7 +253,94 @@ header{flex-shrink:0;padding:8px 14px;background:rgba(10,18,28,.92);border-botto
   </div>
 </div>
 
+<!-- DESK ZOOM OVERLAY -->
+<div id="desk-zoom" onclick="closeDeskZoom(event)">
+  <div id="desk-top" onclick="event.stopPropagation()">
+    <div class="desk-top-bar">
+      <div class="desk-top-title">BOSS DESK <span>// COMPLETED WORK</span></div>
+      <button class="desk-top-close" onclick="closeDeskZoom()">✕</button>
+    </div>
+    <div class="desk-items-wrap" id="desk-items-wrap">
+      <div class="desk-empty-items" id="desk-empty-items">
+        <span class="dei-ic">🗄️</span>
+        <div class="dei-txt">NO COMPLETED WORK YET</div>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
+/* ---------- DESK ZOOM ---------- */
+const DESK_BOSS_URL = 'http://127.0.0.1:4321';
+let deskZoomOpen = false;
+let deskPollTimer = null;
+
+function openDeskZoom(){
+  if(deskZoomOpen) return;
+  deskZoomOpen = true;
+  document.getElementById('desk-zoom').classList.add('open');
+  loadDeskItems();
+  // Poll for new items while open
+  if(deskPollTimer) clearInterval(deskPollTimer);
+  deskPollTimer = setInterval(loadDeskItems, 4000);
+}
+
+function closeDeskZoom(e){
+  if(e && e.target !== e.currentTarget) return; // only close when clicking backdrop
+  deskZoomOpen = false;
+  document.getElementById('desk-zoom').classList.remove('open');
+  if(deskPollTimer){ clearInterval(deskPollTimer); deskPollTimer = null; }
+}
+
+function getItemType(ext){
+  const m={doc:'doc',docx:'doc',txt:'doc',md:'doc',rtf:'doc',pdf:'pdf',png:'img',jpg:'img',jpeg:'img',gif:'img',webp:'img',svg:'img',py:'code',js:'code',html:'code',css:'code',ts:'code',json:'code',yaml:'code',yml:'code',mp3:'audio',wav:'audio',m4a:'audio',ogg:'audio'};
+  return m[ext]||'other';
+}
+function getItemIcon(ext){
+  const m={doc:'📄',docx:'📄',txt:'📝',md:'📝',rtf:'📄',pdf:'📕',png:'🖼️',jpg:'🖼️',jpeg:'🖼️',gif:'🖼️',webp:'🖼️',svg:'🖼️',py:'🐍',js:'📜',html:'🌐',css:'🎨',ts:'📘',json:'📋',yaml:'📋',yml:'📋',mp3:'🎵',wav:'🎵',m4a:'🎵',ogg:'🎵'};
+  return m[ext]||'📎';
+}
+
+async function loadDeskItems(){
+  try{
+    const r = await fetch(DESK_BOSS_URL+'/api/items', {cache:'no-store'});
+    if(!r.ok) return;
+    const items = await r.json();
+    const wrap = document.getElementById('desk-items-wrap');
+    const empty = document.getElementById('desk-empty-items');
+    // Remove old item cards (keep empty state)
+    wrap.querySelectorAll('.desk-item-card').forEach(el=>el.remove());
+    if(items.length === 0){
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      items.forEach((item, i) => {
+        const ext = item.ext || 'other';
+        const type = getItemType(ext);
+        const icon = getItemIcon(ext);
+        const card = document.createElement('div');
+        card.className = 'desk-item-card';
+        card.style.animationDelay = (i * 0.04) + 's';
+        card.innerHTML = `<span class="desk-item-ic">${icon}</span>
+          <div class="desk-item-title">${item.title}</div>
+          <div class="desk-item-meta">
+            <span>${item.time || ''}</span>
+            <span class="desk-item-badge ${type}">${ext.toUpperCase()}</span>
+          </div>`;
+        card.onclick = () => {
+          const url = DESK_BOSS_URL+'/items/'+item.file;
+          const a = document.createElement('a');
+          a.href = url; a.download = item.title; a.click();
+        };
+        wrap.appendChild(card);
+      });
+    }
+  }catch(e){ /* desk server not running */ }
+}
+
+// Keyboard shortcut to close
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && deskZoomOpen) closeDeskZoom();
+});
 /* ============================================================
    BUKIMIND VIRTUAL OFFICE — Multi-Room Edition
    ============================================================ */
@@ -514,8 +633,22 @@ function drawDesk(agent){
   px(x,y+TILE-3, w,3, '#1c140d');
   px(x, y+TILE-2, w, 2, hexA(agent.color||C.cyan,0.5));
   px(x+w/2-7, y+6, 14,4, '#11202d');
-  ctx.fillStyle=hexA(agent.color||C.cyan,0.05);
-  ctx.beginPath(); ctx.ellipse(x+w/2, y+TILE+6, w*0.7, 10, 0,0,Math.PI*2); ctx.fill();
+  // Boss desk glow accent
+  if(agent.boss){
+    px(x, y+TILE-2, w, 2, hexA(C.cyan,0.6));
+    ctx.fillStyle=hexA(C.cyan,0.04);
+    ctx.beginPath(); ctx.ellipse(x+w/2, y+TILE+6, w*0.7, 10, 0,0,Math.PI*2); ctx.fill();
+    // Click hint
+    if(Math.floor(Date.now()/800)%2===0){
+      ctx.fillStyle='rgba(35,227,255,0.12)';
+      ctx.font='5px \"Space Mono\", monospace';
+      ctx.textAlign='center'; ctx.textBaseline='bottom';
+      ctx.fillText('[CLICK TO VIEW]', x+w/2, y-2);
+    }
+  } else {
+    ctx.fillStyle=hexA(agent.color||C.cyan,0.05);
+    ctx.beginPath(); ctx.ellipse(x+w/2, y+TILE+6, w*0.7, 10, 0,0,Math.PI*2); ctx.fill();
+  }
 }
 
 /* ---------- DRAW: CHAIR ---------- */
@@ -1053,7 +1186,15 @@ canvas.addEventListener('click',e=>{
     return;
   }
   
-  // Room mode: click agent
+  // Room mode: click desk or agent
+  // Check boss desk click first
+  const bossDesk = DESK_POSITIONS[0];
+  const bx = bossDesk.dx*TILE, by = bossDesk.dy*TILE, bw = bossDesk.w*TILE;
+  if(mx>=bx && mx<=bx+bw && my>=by && my<=by+TILE+8){
+    openDeskZoom();
+    return;
+  }
+  // Check agents
   let best=null,bd=1e9;
   activeAgents.forEach(a=>{ const d=Math.hypot(mx-a.x,my-(a.y-7)); if(d<bd&&d<12){bd=d;best=a;} });
   if(best){ inspect(best.id); switchTab('insp'); }
