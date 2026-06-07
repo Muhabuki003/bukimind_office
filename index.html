@@ -84,28 +84,29 @@ header{flex-shrink:0;padding:8px 14px;background:rgba(10,18,28,.92);border-botto
 .insp-stat-v{font-size:11px;color:var(--cyan);margin-top:2px;font-weight:700}
 .insp-out{background:#060c12;border:1px solid var(--border);border-radius:5px;padding:8px;font-size:9px;line-height:1.6;white-space:pre-wrap;color:var(--text2);max-height:100px;overflow-y:auto}
 .insp-out .hl{color:var(--cyan)}.insp-out .ok{color:var(--green)}.insp-out .wn{color:var(--amber)}
-/* CHAT */
-#p-chat{display:flex;flex-direction:column;height:100%;padding:0}
-.chat-header{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(35,227,255,.06);border-bottom:1px solid var(--border);flex-shrink:0}
-.chat-av{width:22px;height:22px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:var(--pixel);font-size:10px;flex-shrink:0}
-.chat-agent-name{font-size:10px;color:var(--text);letter-spacing:.5px}
-.chat-agent-role{font-size:7px;color:var(--text2)}
-.chat-agent-room{font-size:7px;color:var(--text3);margin-left:auto}
-.chat-msgs{flex:1;overflow-y:auto;padding:8px 10px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent;display:flex;flex-direction:column;gap:6px;min-height:0}
-.chat-msgs::-webkit-scrollbar{width:4px}
-.chat-msgs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-.cmsg{max-width:85%;padding:6px 9px;border-radius:6px;font-size:9px;line-height:1.5;word-wrap:break-word;white-space:pre-wrap;animation:fade .2s}
-.cmsg.you{align-self:flex-end;background:rgba(35,227,255,.15);border:1px solid rgba(35,227,255,.25);color:var(--text)}
-.cmsg.agent{align-self:flex-start;background:rgba(10,18,28,.8);border:1px solid var(--border2);color:var(--text2)}
-.cmsg.typing{align-self:flex-start;background:transparent;border:none;color:var(--text3);font-style:italic}
-.chat-input-row{display:flex;gap:6px;padding:6px 8px;border-top:1px solid var(--border);flex-shrink:0;background:rgba(10,18,28,.5)}
-.chat-input{flex:1;background:rgba(10,18,28,.8);border:1px solid var(--border);border-radius:4px;padding:6px 8px;color:var(--text);font-family:var(--mono);font-size:9px;outline:none;transition:border-color .12s}
-.chat-input:focus{border-color:var(--cyan)}
-.chat-input::placeholder{color:var(--text3)}
-.chat-send{background:rgba(35,227,255,.12);border:1px solid rgba(35,227,255,.3);border-radius:4px;color:var(--cyan);font-family:var(--mono);font-size:9px;padding:4px 10px;cursor:pointer;transition:all .12s}
-.chat-send:hover{background:rgba(35,227,255,.25)}
-.chat-send:active{transform:scale(.95)}
-.chat-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);font-size:9px;gap:6px;padding:16px;text-align:center}
+/* PEEK — Live agent work view */
+#p-peek{display:flex;flex-direction:column;height:100%;padding:0}
+.peek-head{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(35,227,255,.06);border-bottom:1px solid var(--border);flex-shrink:0}
+.peek-av{width:22px;height:22px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:var(--pixel);font-size:10px;flex-shrink:0}
+.peek-name{font-size:10px;color:var(--text);letter-spacing:.5px}
+.peek-role{font-size:7px;color:var(--text2)}
+.peek-room{font-size:7px;color:var(--text3);margin-left:auto}
+.peek-body{flex:1;overflow-y:auto;padding:8px 10px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent;display:flex;flex-direction:column;gap:6px;min-height:0}
+.peek-body::-webkit-scrollbar{width:4px}
+.peek-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.peek-card{border:1px solid var(--border2);border-radius:5px;overflow:hidden;animation:fade .2s}
+.peek-card-h{display:flex;align-items:center;gap:6px;padding:5px 8px;background:rgba(35,227,255,.05);border-bottom:1px solid var(--border2);font-size:8px;color:var(--text2);letter-spacing:.5px}
+.peek-card-h .pch-status{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.peek-card-body{padding:7px 8px;font-size:8px;line-height:1.5;color:var(--text2)}
+.peek-file{color:var(--cyan);font-weight:700}
+.peek-action{color:var(--amber)}
+.peek-code{background:#060c12;border:1px solid var(--border);border-radius:3px;padding:6px;margin-top:4px;font-size:7px;line-height:1.4;white-space:pre-wrap;overflow-x:auto;color:var(--green);font-family:var(--mono);max-height:80px;overflow-y:auto}
+.peek-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);font-size:9px;gap:6px;padding:16px;text-align:center}
+.peek-stream{padding:0 8px 6px;display:flex;flex-direction:column;gap:4px}
+.peek-stream-item{display:flex;gap:5px;align-items:flex-start;padding:4px 0;border-bottom:1px solid rgba(21,41,60,.4);font-size:7px;color:var(--text2)}
+.peek-stream-item:last-child{border:none}
+.peek-stream-t{color:var(--text3);flex-shrink:0;font-size:7px}
+.peek-stream-f{color:var(--cyan)}
 /* METRICS */
 .met-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
 .met{background:rgba(35,227,255,.04);border:1px solid var(--border);border-radius:5px;padding:7px;text-align:center}
@@ -167,7 +168,7 @@ header{flex-shrink:0;padding:8px 14px;background:rgba(10,18,28,.92);border-botto
       <div class="ctab" data-tab="insp">Inspect</div>
       <div class="ctab" data-tab="met">System</div>
       <div class="ctab" data-tab="trig">Trigger</div>
-      <div class="ctab" data-tab="chat">Chat</div>
+      <div class="ctab" data-tab="peek">Peek</div>
     </div>
     <div class="console-body">
       <div class="cpanel active" id="p-log"></div>
@@ -186,22 +187,34 @@ header{flex-shrink:0;padding:8px 14px;background:rgba(10,18,28,.92);border-botto
         <button class="trig" onclick="window.bukimind.trigger('bookistudio')"><span class="trig-ic">▶</span> Check BookiStudio pipeline</button>
         <button class="trig" onclick="window.bukimind.trigger('hq')"><span class="trig-ic">▶</span> Return to HQ</button>
       </div>
-      <div class="cpanel" id="p-chat">
-        <div class="chat-header" id="chat-header">
-          <div class="chat-av" id="chat-av" style="background:rgba(35,227,255,.1);color:var(--cyan)">◈</div>
-          <div><div class="chat-agent-name" id="chat-name">Select an agent</div><div class="chat-agent-role" id="chat-role">Tap an agent to chat</div></div>
-          <div class="chat-agent-room" id="chat-room"></div>
+      <div class="cpanel" id="p-peek">
+        <div class="peek-head" id="peek-head">
+          <div class="peek-av" id="peek-av" style="background:rgba(35,227,255,.1);color:var(--cyan)">⌘</div>
+          <div><div class="peek-name" id="peek-name">Select an agent</div><div class="peek-role" id="peek-role">Tap an agent to peek into their work</div></div>
+          <div class="peek-room" id="peek-room"></div>
         </div>
-        <div class="chat-msgs" id="chat-msgs">
-          <div class="chat-empty" id="chat-empty">
-            <span style="font-size:18px">💬</span>
-            <span>Tap an agent to start chatting</span>
-            <span style="font-size:7px;color:var(--text3)">Each agent has unique knowledge about their domain</span>
+        <div class="peek-body" id="peek-body">
+          <div class="peek-empty" id="peek-empty">
+            <span style="font-size:18px">🔍</span>
+            <span>Tap an agent to see what they're working on</span>
+            <span style="font-size:7px;color:var(--text3)">Live activity, files being edited, code being written</span>
           </div>
-        </div>
-        <div class="chat-input-row">
-          <input class="chat-input" id="chat-input" type="text" placeholder="Message the agent..." disabled>
-          <button class="chat-send" id="chat-send" onclick="sendChat()" disabled>Send</button>
+          <div id="peek-content" style="display:none">
+            <div class="peek-card" id="peek-current-card">
+              <div class="peek-card-h">
+                <span class="pch-status" id="peek-status-dot" style="background:var(--green)"></span>
+                <span id="peek-status-label">Working</span>
+                <span style="margin-left:auto;font-size:7px;color:var(--text3)" id="peek-since">—</span>
+              </div>
+              <div class="peek-card-body" id="peek-card-body">
+                <span class="peek-action" id="peek-action">Working on</span>
+                <span class="peek-file" id="peek-file">—</span>
+                <div class="peek-code" id="peek-code">—</div>
+              </div>
+            </div>
+            <div style="margin-top:8px;font-size:7px;color:var(--text3);letter-spacing:1px;padding:0 2px 4px">RECENT ACTIVITY</div>
+            <div class="peek-stream" id="peek-stream"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -755,7 +768,7 @@ function renderChips(){
   if(currentRoom==='hq'){ bar.innerHTML=''; return; }
   bar.innerHTML=activeAgents.map(a=>{
     const sc=a.status==='working'?(a.color||C.cyan):a.status==='done'?C.green:'#5d7d96';
-    return `<div class="agent-chip ${a.boss?'boss':''}" onclick="window.bukimind.inspect('${a.id}');window.bukimind.openChat('${a.id}')">
+    return `<div class="agent-chip ${a.boss?'boss':''}" onclick="window.bukimind.inspect('${a.id}');window.bukimind.openPeek('${a.id}')">
       <div class="chip-led" style="background:${sc};box-shadow:0 0 6px ${sc}"></div>
       <div><div class="chip-name">${a.name}</div><div class="chip-status" style="color:${sc}">${a.status.toUpperCase()}</div></div>
     </div>`;
@@ -802,47 +815,71 @@ function switchTab(name){
 }
 document.querySelectorAll('.ctab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
 
-/* ---------- CHAT ---------- */
-let chatTarget = null; // { agent_id, room_id, name, glyph, color }
-let chatHistory = [];
+/* ---------- PEEK — Live agent work view ---------- */
+let peekTarget = null; // { agent_id, room_id, name, glyph, color }
 
-function openChat(agentId, roomId){
+function openPeek(agentId, roomId){
   const room = roomData[roomId];
   if(!room) return;
   const def = (room.agents||[]).find(a=>a.id===agentId);
   if(!def) return;
-  
+
   const glyphs = ['⬡','◈','◎','◆','◉','◇','○','□','△','☆'];
   const idx = (room.agents||[]).indexOf(def);
   const roomColors = ['#23e3ff','#3b82f6','#a855f7','#f5a623','#22e07a','#ff5d6c'];
   const color = roomColors[idx % roomColors.length];
   const glyph = glyphs[idx] || '●';
-  
-  chatTarget = { agent_id: agentId, room_id: roomId, name: def.name || agentId, glyph, color };
-  chatHistory = [];
-  
-  document.getElementById('chat-av').style.background = `rgba(${hexToRgb(color)},.15)`;
-  document.getElementById('chat-av').style.color = color;
-  document.getElementById('chat-av').textContent = glyph;
-  document.getElementById('chat-name').textContent = def.name || agentId;
-  document.getElementById('chat-role').textContent = def.task || 'Agent';
-  document.getElementById('chat-room').textContent = room.name || roomId;
-  
-  // Enable input
-  document.getElementById('chat-input').disabled = false;
-  document.getElementById('chat-input').placeholder = `Message ${def.name || agentId}...`;
-  document.getElementById('chat-send').disabled = false;
-  document.getElementById('chat-input').focus();
-  
-  // Show chat panel
-  const msgs = document.getElementById('chat-msgs');
-  msgs.innerHTML = `<div class="cmsg agent" style="border-color:${color}">Hello! I'm the **${def.name} Agent**. I handle ${def.task || 'various tasks'} in the ${room.name} room. How can I help you?</div>`;
-  chatHistory.push({ user: '', assistant: `Hello! I'm the ${def.name} Agent. I handle ${def.task || 'various tasks'} in the ${room.name} room. How can I help you?` });
-  switchTab('chat');
-  
-  // Clear empty state
-  const empty = document.getElementById('chat-empty');
-  if(empty) empty.style.display = 'none';
+
+  peekTarget = { agent_id: agentId, room_id: roomId, name: def.name || agentId, glyph, color };
+
+  document.getElementById('peek-av').style.background = `rgba(${hexToRgb(color)},.15)`;
+  document.getElementById('peek-av').style.color = color;
+  document.getElementById('peek-av').textContent = glyph;
+  document.getElementById('peek-name').textContent = def.name || agentId;
+  document.getElementById('peek-role').textContent = def.task || 'Agent';
+  document.getElementById('peek-room').textContent = room.name || roomId;
+
+  // Load agent activity
+  renderPeek(def, room);
+
+  switchTab('peek');
+}
+
+function renderPeek(def, room){
+  const activity = def.activity || def.state || 'idle';
+  const statusColor = activity === 'working' ? 'var(--green)' : activity === 'idle' ? 'var(--text3)' : 'var(--amber)';
+  const statusLabel = activity === 'working' ? 'Working' : activity === 'idle' ? 'Idle' : activity.charAt(0).toUpperCase() + activity.slice(1);
+
+  document.getElementById('peek-status-dot').style.background = statusColor;
+  document.getElementById('peek-status-label').textContent = statusLabel;
+
+  const currentFile = def.currentFile || '—';
+  const action = def.action || 'Standing by';
+  const snippet = def.snippet || 'Waiting for activity...';
+  const since = def.lastActive || '—';
+
+  document.getElementById('peek-action').textContent = action;
+  document.getElementById('peek-file').textContent = currentFile;
+  document.getElementById('peek-code').textContent = snippet;
+  document.getElementById('peek-since').textContent = since;
+
+  // Recent activity stream
+  const stream = document.getElementById('peek-stream');
+  stream.innerHTML = '';
+  const recent = def.recentActivity || [];
+  if(recent.length === 0){
+    stream.innerHTML = '<div style="font-size:7px;color:var(--text3);padding:4px;text-align:center">No recent activity recorded</div>';
+  } else {
+    recent.slice(-15).reverse().forEach(item => {
+      const ts = item.ts || '';
+      const desc = item.desc || (item.file ? `Edited ${item.file}` : 'Activity');
+      const detail = item.detail || '';
+      stream.innerHTML += `<div class="peek-stream-item"><span class="peek-stream-t">${ts}</span><span class="peek-stream-f">${escapeHtml(desc)}</span></div>`;
+    });
+  }
+
+  document.getElementById('peek-empty').style.display = 'none';
+  document.getElementById('peek-content').style.display = 'block';
 }
 
 function hexToRgb(h){
@@ -850,73 +887,11 @@ function hexToRgb(h){
   return parseInt(h.substring(0,2),16)+','+parseInt(h.substring(2,4),16)+','+parseInt(h.substring(4,6),16);
 }
 
-async function sendChat(){
-  const input = document.getElementById('chat-input');
-  const msg = input.value.trim();
-  if(!msg || !chatTarget) return;
-  
-  input.value = '';
-  input.disabled = true;
-  document.getElementById('chat-send').disabled = true;
-  
-  // Add user message
-  const msgs = document.getElementById('chat-msgs');
-  msgs.innerHTML += `<div class="cmsg you">${escapeHtml(msg)}</div>`;
-  msgs.scrollTop = msgs.scrollHeight;
-  
-  // Typing indicator
-  msgs.innerHTML += `<div class="cmsg typing" id="chat-typing">${chatTarget.name} is thinking...</div>`;
-  msgs.scrollTop = msgs.scrollHeight;
-  
-  try {
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        agent_id: chatTarget.agent_id,
-        room_id: chatTarget.room_id,
-        message: msg,
-        history: chatHistory,
-      }),
-    });
-    
-    // Remove typing indicator
-    const typing = document.getElementById('chat-typing');
-    if(typing) typing.remove();
-    
-    if(!res.ok){
-      const err = await res.json().catch(()=>({}));
-      msgs.innerHTML += `<div class="cmsg agent" style="border-color:var(--coral)">⚠️ ${err.error || 'Agent not available right now'}</div>`;
-    } else {
-      const data = await res.json();
-      msgs.innerHTML += `<div class="cmsg agent" style="border-color:${chatTarget.color}">${escapeHtml(data.reply)}</div>`;
-      chatHistory.push({ user: msg, assistant: data.reply });
-    }
-  } catch(e){
-    const typing = document.getElementById('chat-typing');
-    if(typing) typing.remove();
-    msgs.innerHTML += `<div class="cmsg agent" style="border-color:var(--coral)">⚠️ Connection error — is the office online?</div>`;
-  }
-  
-  msgs.scrollTop = msgs.scrollHeight;
-  input.disabled = false;
-  document.getElementById('chat-send').disabled = false;
-  input.focus();
-}
-
 function escapeHtml(t){
   const d = document.createElement('div');
   d.textContent = t;
   return d.innerHTML;
 }
-
-// Enter to send
-document.addEventListener('keydown', e => {
-  if(e.key === 'Enter' && document.activeElement === document.getElementById('chat-input')){
-    e.preventDefault();
-    sendChat();
-  }
-});
 
 /* ---------- CLOCK + METRICS ---------- */
 let upMin=0;
@@ -976,7 +951,7 @@ function trigger(type){
 /* ---------- PUBLIC API ---------- */
 window.bukimind={
   trigger, inspect, log, switchTab, switchRoom, goHome:()=>switchRoom('hq'),
-  openChat,
+  openPeek,
   updateAgent(id,patch){
     const a=activeById[id]; if(!a) return;
     Object.assign(a,patch); renderChips();
@@ -1115,6 +1090,7 @@ async function pollHermes(){
     // Update agents in current room
     if(currentRoom !== 'hq' && roomData[currentRoom]){
       const defs = roomData[currentRoom].agents || [];
+      let peekDirty = false;
       defs.forEach(x=>{
         const a=activeById[x.id];
         if(!a) return; // will be rebuilt on next switch if needed
@@ -1128,9 +1104,22 @@ async function pollHermes(){
           }
           if(x.status==='done'){ a.setBubble('Done ✓',3000); }
         }
+        // Sync peek data
+        if(x.activity!==undefined) a.activity=x.activity;
+        if(x.currentFile!==undefined) a.currentFile=x.currentFile;
+        if(x.action!==undefined) a.action=x.action;
+        if(x.snippet!==undefined) a.snippet=x.snippet;
+        if(x.lastActive!==undefined) a.lastActive=x.lastActive;
+        if(x.recentActivity!==undefined) a.recentActivity=x.recentActivity;
+        if(x.currentFile || x.snippet) peekDirty = true;
       });
       renderChips();
       if(currentInspect) inspect(currentInspect);
+      // Refresh peek if target agent's data changed
+      if(peekDirty && peekTarget){
+        const updatedDef = (roomData[currentRoom]?.agents||[]).find(a=>a.id===peekTarget.agent_id);
+        if(updatedDef) renderPeek(updatedDef, roomData[currentRoom]);
+      }
     }
     
     // Update room bar
