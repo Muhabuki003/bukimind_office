@@ -301,20 +301,25 @@ function getItemIcon(ext){
 }
 
 async function loadDeskItems(){
+  // Track source: status feed (Pages) vs local server
+  let items = [];
+  let fromLocal = false;
+  
   // Try status feed first (works from Pages)
-  let items = window._deskItemsFromFeed || [];
+  if(window._deskItemsFromFeed && window._deskItemsFromFeed.length > 0){
+    items = window._deskItemsFromFeed;
+  }
   
   // If no items from feed, try local server
   if(items.length === 0){
     try{
       const r = await fetch(DESK_BOSS_URL+'/api/items', {cache:'no-store'});
-      if(r.ok) items = await r.json();
+      if(r.ok){ items = await r.json(); fromLocal = true; }
     }catch(e){}
   }
   
   const wrap = document.getElementById('desk-items-wrap');
   const empty = document.getElementById('desk-empty-items');
-  // Remove old item cards (keep empty state)
   wrap.querySelectorAll('.desk-item-card').forEach(el=>el.remove());
   if(items.length === 0){
     empty.style.display = 'block';
@@ -334,9 +339,16 @@ async function loadDeskItems(){
           <span class="desk-item-badge ${type}">${ext.toUpperCase()}</span>
         </div>`;
       card.onclick = () => {
-        const url = DESK_BOSS_URL+'/items/'+item.file;
-        const a = document.createElement('a');
-        a.href = url; a.download = item.title; a.click();
+        // Local server items: download directly
+        if(fromLocal && item.file){
+          const url = DESK_BOSS_URL+'/items/'+item.file;
+          const a = document.createElement('a');
+          a.href = url; a.download = item.title; a.click();
+        } else {
+          // Status feed items: file is only on the local machine
+          const fname = item.file || item.title || 'file';
+          window.bukimind.log('DESK', 'File: "' + (item.title||'unknown') + '" is on your Mac at ~/.hermes/boss-desk/items/' + fname, '#23e3ff');
+        }
       };
       wrap.appendChild(card);
     });
