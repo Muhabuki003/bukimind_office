@@ -301,40 +301,46 @@ function getItemIcon(ext){
 }
 
 async function loadDeskItems(){
-  try{
-    const r = await fetch(DESK_BOSS_URL+'/api/items', {cache:'no-store'});
-    if(!r.ok) return;
-    const items = await r.json();
-    const wrap = document.getElementById('desk-items-wrap');
-    const empty = document.getElementById('desk-empty-items');
-    // Remove old item cards (keep empty state)
-    wrap.querySelectorAll('.desk-item-card').forEach(el=>el.remove());
-    if(items.length === 0){
-      empty.style.display = 'block';
-    } else {
-      empty.style.display = 'none';
-      items.forEach((item, i) => {
-        const ext = item.ext || 'other';
-        const type = getItemType(ext);
-        const icon = getItemIcon(ext);
-        const card = document.createElement('div');
-        card.className = 'desk-item-card';
-        card.style.animationDelay = (i * 0.04) + 's';
-        card.innerHTML = `<span class="desk-item-ic">${icon}</span>
-          <div class="desk-item-title">${item.title}</div>
-          <div class="desk-item-meta">
-            <span>${item.time || ''}</span>
-            <span class="desk-item-badge ${type}">${ext.toUpperCase()}</span>
-          </div>`;
-        card.onclick = () => {
-          const url = DESK_BOSS_URL+'/items/'+item.file;
-          const a = document.createElement('a');
-          a.href = url; a.download = item.title; a.click();
-        };
-        wrap.appendChild(card);
-      });
-    }
-  }catch(e){ /* desk server not running */ }
+  // Try status feed first (works from Pages)
+  let items = window._deskItemsFromFeed || [];
+  
+  // If no items from feed, try local server
+  if(items.length === 0){
+    try{
+      const r = await fetch(DESK_BOSS_URL+'/api/items', {cache:'no-store'});
+      if(r.ok) items = await r.json();
+    }catch(e){}
+  }
+  
+  const wrap = document.getElementById('desk-items-wrap');
+  const empty = document.getElementById('desk-empty-items');
+  // Remove old item cards (keep empty state)
+  wrap.querySelectorAll('.desk-item-card').forEach(el=>el.remove());
+  if(items.length === 0){
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    items.forEach((item, i) => {
+      const ext = item.ext || 'other';
+      const type = getItemType(ext);
+      const icon = getItemIcon(ext);
+      const card = document.createElement('div');
+      card.className = 'desk-item-card';
+      card.style.animationDelay = (i * 0.04) + 's';
+      card.innerHTML = `<span class="desk-item-ic">${icon}</span>
+        <div class="desk-item-title">${item.title}</div>
+        <div class="desk-item-meta">
+          <span>${item.time || ''}</span>
+          <span class="desk-item-badge ${type}">${ext.toUpperCase()}</span>
+        </div>`;
+      card.onclick = () => {
+        const url = DESK_BOSS_URL+'/items/'+item.file;
+        const a = document.createElement('a');
+        a.href = url; a.download = item.title; a.click();
+      };
+      wrap.appendChild(card);
+    });
+  }
 }
 
 // Keyboard shortcut to close
@@ -750,6 +756,83 @@ function drawBubble(a, sctx, S, offX, offY){
   sctx.fillStyle='#dcefff'; sctx.textBaseline='middle'; sctx.textAlign='center';
   sctx.fillText(a.bubble, sx, by+bh/2);
 }
+
+/* ---------- DELIVERY (walking papers) ---------- */
+let deliveryAnim = null; // { agent_id, room_id, title, ext, ts, phase, timer, ... }
+
+function triggerDelivery(delivery){
+  if(!delivery || delivery.agent_id === undefined) return;
+  // Don't restart the same delivery
+  if(deliveryAnim && deliveryAnim.ts === delivery.ts) return;
+  
+  const agent = activeById[delivery.agent_id];
+  if(!agent) return;
+  
+  const bossDesk = DESK_POSITIONS[0];
+  const bx = bossDesk.seatX, by = bossDesk.seatY;
+  
+  deliveryAnim = {
+    ...delivery,
+    phase: 'walking',  // walking → placing → done
+    timer: 0,
+    startX: agent.tx, startY: agent.ty,
+    targetX: bx, targetY: by - 1,
+    agent: agent,
+    paperIcon: delivery.ext ? (delivery.ext.match(/pdf|doc|txt|md/) ? '📄' : '📎') : '📄',
+  };
+  
+  // Walk the agent to the boss desk
+  agent.setBubble('📄 Delivering...', 6000);
+  agent.goTo(bx, by - 1, () => {
+    deliveryAnim.phase = 'placing';
+    deliveryAnim.timer = 0;
+    agent.setBubble('📄 Placing on desk', 3000);
+  });
+  log('SYSTEM', `📄 ${delivery.title} walking to desk`, C.green);
+}
+
+function updateDelivery(dt){
+  if(!deliveryAnim) return;
+  const da = deliveryAnim;
+  da.timer += dt;
+  
+  if(da.phase === 'placing' && da.timer > 800){
+    da.phase = 'done';
+    da.agent.setBubble('✅ Done!', 2000);
+    da.agent.status = 'idle';
+    da.agent.goTo(da.startX, da.startY, () => {
+      da.agent.state = 'idle';
+      da.agent.seated = false;
+    });
+    log('SYSTEM', `📄 ${da.title} placed on Boss Desk`, C.green);
+  }
+  
+  if(da.phase === 'done' && da.timer > 4000){
+    deliveryAnim = null;
+  }
+}
+
+function drawDelivery(){
+  if(!deliveryAnim || deliveryAnim.phase === 'done') return;
+  const da = deliveryAnim;
+  const a = da.agent;
+  if(!a) return;
+  
+  // Draw papers above agent's head
+  if(da.phase === 'walking' || da.phase === 'placing'){
+    const px2 = a.x, py2 = a.y - 24 + (da.phase === 'placing' ? Math.sin(da.timer * 0.02) * 2 : 0);
+    ctx.fillStyle = '#f5f0e0';
+    ctx.fillRect(px2-5, py2-2, 10, 7);
+    ctx.fillStyle = '#e8e0c8';
+    ctx.fillRect(px2-4, py2-1, 8, 5);
+    ctx.fillStyle = '#d0c8a8';
+    ctx.fillRect(px2-3, py2, 6, 3);
+    // Tiny text on top paper
+    ctx.fillStyle = '#8a7a5a';
+    ctx.font = '3px monospace';
+    ctx.fillText('📄', px2-3, py2+5);
+  }
+}
 function roundRect(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
 
 /* ---------- NAMEPLATE ---------- */
@@ -1119,6 +1202,7 @@ function frame(now){
   
   if(currentRoom !== 'hq'){
     activeAgents.forEach(a=>a.update(dt));
+    updateDelivery(dt);  // walking delivery animation
   }
   
   ctx.save();
@@ -1156,6 +1240,7 @@ function frame(now){
   }
   
   drawDust(dt);
+  drawDelivery();  // papers above delivering agent
   ctx.restore();
   
   // Screen-space overlays
@@ -1269,6 +1354,16 @@ async function pollHermes(){
     
     // Update metrics
     updateMetrics();
+    
+    // Handle desk delivery animation
+    if(data.desk_delivery && currentRoom !== 'hq'){
+      triggerDelivery(data.desk_delivery);
+    }
+    
+    // Sync desk items from status feed
+    if(data.desk_items && Array.isArray(data.desk_items)){
+      window._deskItemsFromFeed = data.desk_items;
+    }
     
     // Events
     const evs=data.events||[];
