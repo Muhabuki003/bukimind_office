@@ -544,78 +544,9 @@ function drawWalls(){
   ctx.fillStyle='rgba(35,227,255,0.15)'; ctx.fillRect(11*TILE,(GH-1)*TILE,2*TILE,TILE);
 }
 
-/* ---------- DRAW: ROOM CARDS (HQ mode) ---------- */
-function drawRoomCards(){
-  const rooms = hqChildren.length > 0 ? hqChildren : Object.keys(roomData).filter(k=>k!=='hq'&&k!=='default');
-  if(rooms.length===0) return;
-  const cols = Math.min(3, rooms.length);
-  const cardW = 6, cardH = 5;
-  const gapX = 1, gapY = 1;
-  const totalW = cols * cardW + (cols-1) * gapX;
-  const startX = (GW - totalW) / 2;
-  const startY = 4;
-  
-  rooms.forEach((rid, i)=>{
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const cx = (startX + col*(cardW+gapX))|0;
-    const cy = (startY + row*(cardH+gapY))|0;
-    const colr = roomColors[i % roomColors.length];
-    const rdef = roomData[rid] || {name:rid, agents:[], metrics:{tasks:0,prs:0,bars:{}}};
-    const name = rdef.name || rid.replace(/-/g,' ').toUpperCase();
-    const agentDefs = rdef.agents || [];
-    const working = agentDefs.filter(a=>a.status==='working').length;
-    const totalAg = agentDefs.length;
-    const barV = rdef.metrics?.bars ? Object.values(rdef.metrics.bars).reduce((a,b)=>a+b,0) / Math.max(1,Object.keys(rdef.metrics.bars).length) : 0;
-
-    // Card background
-    ctx.fillStyle = 'rgba(10,18,28,0.92)';
-    ctx.fillRect(cx*TILE, cy*TILE, cardW*TILE, cardH*TILE);
-    // Card border
-    ctx.strokeStyle = colr; ctx.lineWidth = 1.5;
-    ctx.strokeRect(cx*TILE+1, cy*TILE+1, cardW*TILE-2, cardH*TILE-2);
-    // Subtle glow
-    ctx.fillStyle = hexA(colr,0.06);
-    ctx.fillRect(cx*TILE, cy*TILE, cardW*TILE, cardH*TILE);
-
-    // Room name
-    ctx.fillStyle = colr;
-    ctx.font = '8px "Press Start 2P", monospace';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    ctx.fillText(name.slice(0,14), cx*TILE + cardW*TILE/2, cy*TILE + 6);
-
-    // Agent count
-    ctx.font = '6px "Space Mono", monospace';
-    ctx.fillStyle = C.text2;
-    ctx.fillText(`${working}/${totalAg} agents active`, cx*TILE + cardW*TILE/2, cy*TILE + 22);
-
-    // Working dot indicator
-    if(working > 0){
-      px(cx*TILE + cardW*TILE - 10, cy*TILE + 5, 5, 5, C.green);
-      ctx.fillStyle = hexA(C.green,0.3);
-      ctx.beginPath(); ctx.arc(cx*TILE + cardW*TILE - 7.5, cy*TILE + 7.5, 6, 0, Math.PI*2); ctx.fill();
-    }
-
-    // Progress bar
-    const barX = cx*TILE + 6, barY = cy*TILE + 36;
-    const barW = cardW*TILE - 12;
-    px(barX, barY, barW|0, 3, C.border);
-    px(barX, barY, (barW * Math.min(barV/100,1))|0, 3, colr);
-
-    // Click hint
-    ctx.font = '5px "Space Mono", monospace';
-    ctx.fillStyle = C.text3;
-    ctx.fillText('[ click to enter ]', cx*TILE + cardW*TILE/2, cy*TILE + 48);
-
-    // Store click zone
-    roomCards.push({rid, x:cx, y:cy, w:cardW, h:cardH});
-  });
-}
-let roomCards = [];
-
 /* ---------- DRAW: ROOM WALLS (HQ mode partitions) ---------- */
 function drawRoomPartitions(){
-  // No separate walls needed — the card backgrounds serve as visual rooms
+  // No separate walls needed
 }
 
 /* ---------- DRAW: KANBAN ---------- */
@@ -946,7 +877,6 @@ function switchRoom(roomId){
   buildAgentsFromRoom(roomId);
   renderChips();
   renderRoomBar();
-  roomCards = [];
   
   // Rebuild blocked grid for desks if in room mode
   rebuildBlocked();
@@ -1226,12 +1156,18 @@ function frame(now){
   drawWalls();
   
   if(currentRoom === 'hq'){
-    // HQ mode: draw room cards
-    roomCards = [];
-    drawRoomCards();
-    drawDecor(DECOR[0]); // just plants for ambiance
+    // HQ mode: clean landing — no room cards, just ambiance
+    drawDecor(DECOR[0]);
     drawDecor(DECOR[1]);
     drawDecor(DECOR[2]);
+    // Room name in center
+    ctx.fillStyle = hexA(C.cyan,0.06);
+    ctx.font = '7px "Press Start 2P", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('SELECT A ROOM', TILE*GW/2, TILE*GH/2 - 6);
+    ctx.font = '5px "Space Mono", monospace';
+    ctx.fillStyle = C.text3;
+    ctx.fillText('use the room bar above', TILE*GW/2, TILE*GH/2 + 8);
   } else {
     // Room mode: desks + agents
     drawKanban();
@@ -1272,14 +1208,7 @@ canvas.addEventListener('click',e=>{
   const mx=(e.clientX-rect.left)/S, my=(e.clientY-rect.top)/S;
   
   if(currentRoom === 'hq'){
-    // Check room card clicks
-    for(const card of roomCards){
-      const cx=card.x*TILE, cy=card.y*TILE, cw=card.w*TILE, ch=card.h*TILE;
-      if(mx>=cx && mx<=cx+cw && my>=cy && my<=cy+ch){
-        switchRoom(card.rid);
-        return;
-      }
-    }
+    // HQ mode — no room cards; use the room bar to navigate
     return;
   }
   
