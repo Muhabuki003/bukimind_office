@@ -819,7 +819,8 @@ document.querySelectorAll('.ctab').forEach(t=>t.addEventListener('click',()=>swi
 let peekTarget = null; // { agent_id, room_id, name, glyph, color }
 
 function openPeek(agentId, roomId){
-  const room = roomData[roomId];
+  const rid = roomId || currentRoom;
+  const room = roomData[rid];
   if(!room) return;
   const def = (room.agents||[]).find(a=>a.id===agentId);
   if(!def) return;
@@ -830,7 +831,7 @@ function openPeek(agentId, roomId){
   const color = roomColors[idx % roomColors.length];
   const glyph = glyphs[idx] || '●';
 
-  peekTarget = { agent_id: agentId, room_id: roomId, name: def.name || agentId, glyph, color };
+  peekTarget = { agent_id: agentId, room_id: rid, name: def.name || agentId, glyph, color };
 
   document.getElementById('peek-av').style.background = `rgba(${hexToRgb(color)},.15)`;
   document.getElementById('peek-av').style.color = color;
