@@ -490,6 +490,7 @@ let roomAgentDefs = {};        // agent definitions keyed by room id
 let roomMetrics = {};          // metrics keyed by room id
 let hqChildren = [];          // rooms under hq
 let roomColors = ['#23e3ff','#3b82f6','#a855f7','#f5a623','#22e07a','#ff5d6c'];
+let occupiedDesks = 0;        // how many desks the current room actually uses
 
 /* ===== DESK POSITIONS (6 slots, indexed) — open-plan cubicle pods =====
    Two tight rows of cubicles on the left/centre, manager office on the right,
@@ -503,11 +504,16 @@ const DESK_POSITIONS = [
   { dx:6,  dy:8, w:3, seatX:7,  seatY:9 },   // row 2 — b
 ];
 
-/* decor: type + tile pos — pushed to the perimeter like the demo */
+/* decor: type + tile pos — pushed to the perimeter, right side filled out */
 const DECOR = [
-  {t:'coffee', x:1, y:1},{t:'bookshelf', x:11, y:1},{t:'server', x:20, y:1},
-  {t:'cooler', x:1, y:6},{t:'plant', x:22, y:5},
-  {t:'plant', x:1, y:13},{t:'plant', x:22, y:13},
+  // top wall
+  {t:'coffee', x:1, y:1},{t:'bookshelf', x:5, y:1},{t:'server', x:9, y:1},
+  {t:'bookshelf', x:14, y:1},{t:'plant', x:21, y:1},
+  // left wall
+  {t:'cooler', x:1, y:6},{t:'plant', x:1, y:13},
+  // right side — lounge / utility zone so it isn't empty
+  {t:'plant', x:22, y:3},{t:'coffee', x:22, y:6},{t:'server', x:22, y:9},{t:'plant', x:22, y:13},
+  {t:'cooler', x:14, y:5},{t:'bookshelf', x:14, y:8},
 ];
 
 /* ---------- BUILD BLOCKED GRID ---------- */
@@ -989,9 +995,14 @@ function buildAgentsFromRoom(roomId){
   activeById = {};
   
   const room = roomData[roomId];
-  if(!room || roomId==='hq') return;
-  
+  if(!room || roomId==='hq'){ occupiedDesks=0; rebuildBlocked(); rebuildWalkGrid(); return; }
+
   const defs = room.agents || [];
+  // Build the collision grids up front so every agent paths around the desks
+  // (and to its CURRENT desk position) the moment it is created.
+  occupiedDesks = Math.min(defs.length, DESK_POSITIONS.length);
+  rebuildBlocked();
+  rebuildWalkGrid();
   defs.forEach((def, idx)=>{
     if(idx >= DESK_POSITIONS.length) return;
     const color = roomColors[idx % roomColors.length];
@@ -1079,7 +1090,16 @@ function rebuildBlocked(){
   for(let y=0;y<GH;y++){blocked[y][0]=true;blocked[y][GW-1]=true;}
   blocked[GH-1][11]=false; blocked[GH-1][12]=false;
   if(currentRoom !== 'hq'){
-    DESK_POSITIONS.forEach(d=>{for(let i=0;i<d.w;i++) blocked[d.dy][d.dx+i]=true;});
+    // block each occupied desk's footprint (top + front), but keep the seat tile
+    // walkable so the agent can reach it from below
+    for(let i=0;i<occupiedDesks && i<DESK_POSITIONS.length;i++){
+      const d=DESK_POSITIONS[i];
+      for(let c=0;c<d.w;c++){
+        blocked[d.dy][d.dx+c]=true;
+        const fy=d.dy+1, fx=d.dx+c;
+        if(blocked[fy] && !(fx===d.seatX && fy===d.seatY)) blocked[fy][fx]=true;
+      }
+    }
   }
   DECOR.forEach(d=>{ if(blocked[d.y]&&blocked[d.y][d.x]!==undefined) blocked[d.y][d.x]=true; });
 }
@@ -1416,12 +1436,20 @@ canvas.addEventListener('click',e=>{
 
 /* ---------- BFS PATHFINDING ---------- */
 const WALKABLE = new Set();
-function initWalkGrid(){
+function rebuildWalkGrid(){
+  WALKABLE.clear();
   for(let y=2;y<GH-1;y++) for(let x=1;x<GW-1;x++) WALKABLE.add(x+','+y);
-  DESK_POSITIONS.forEach(d=>{
-    for(let dx=0;dx<d.w;dx++) for(let dy=0;dy<2;dy++) WALKABLE.delete((d.dx+dx)+','+(d.dy+dy));
-    WALKABLE.delete((d.dx+2)+','+(d.dy-1));
-  });
+  if(currentRoom !== 'hq'){
+    for(let i=0;i<occupiedDesks && i<DESK_POSITIONS.length;i++){
+      const d=DESK_POSITIONS[i];
+      for(let c=0;c<d.w;c++){
+        WALKABLE.delete((d.dx+c)+','+d.dy);
+        const fy=d.dy+1, fx=d.dx+c;
+        if(!(fx===d.seatX && fy===d.seatY)) WALKABLE.delete(fx+','+fy);
+      }
+    }
+  }
+  DECOR.forEach(d=> WALKABLE.delete(d.x+','+d.y));
 }
 function bfsPath(sx,sy,tx,ty){
   if(sx===tx && sy===ty) return [];
@@ -1642,7 +1670,7 @@ async function pollHermes(){
 }
 
 /* ---------- BOOT ---------- */
-initWalkGrid();
+rebuildWalkGrid();
 setupCustomAgentsRoom();
 connectWebSocket();
 log('SYSTEM','Connecting to Hermes feed…',C.cyan);
