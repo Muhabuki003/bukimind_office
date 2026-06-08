@@ -271,7 +271,8 @@ header{flex-shrink:0;padding:8px 14px;background:rgba(10,18,28,.92);border-botto
 </div>
 <script>
 /* ---------- DESK ZOOM ---------- */
-const DESK_BOSS_URL = window.location.origin + '/api/office';
+const OFFICE_BACKEND = 'https://office.bookistudios.com/api/office';
+const DESK_BOSS_URL = OFFICE_BACKEND;
 let deskZoomOpen = false;
 let deskPollTimer = null;
 
@@ -1314,8 +1315,8 @@ let wsReconnectTimer = null;
 let wsConnected = false;
 function connectWebSocket(){
   if(ws && ws.readyState === WebSocket.OPEN) return;
-  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsUrl = proto + '//' + window.location.host + '/api/office/ws';
+  // Connect to office backend
+  const wsUrl = 'wss://office.bookistudios.com/api/office/ws';
   try{
     ws = new WebSocket(wsUrl);
     ws.onopen = function(){ wsConnected = true; log('SYSTEM','WebSocket connected ✓', C.green); };
@@ -1365,7 +1366,7 @@ let lastEventKey='';
 let lastRoom = 'hq';
 async function pollHermes(){
   try{
-    const r=await fetch('/status',{cache:'no-store'});
+    const r=await fetch(OFFICE_BACKEND+'/state',{cache:'no-store'});
     if(!r.ok) return;
     const data=await r.json();
     
