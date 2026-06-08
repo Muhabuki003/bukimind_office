@@ -1,501 +1,1584 @@
-1|<!DOCTYPE html>
-2|<html lang="en">
-3|<head>
-4|<meta charset="UTF-8">
-5|<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-6|<title>BUKIMIND // Virtual Office</title>
-7|<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-8|<style>
-9|*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-10|:root{
-11|  --bg:#05080d;--panel:#0a121c;--panel2:#0d1825;--border:#15293c;
-12|  --border2:#203a54;--cyan:#23e3ff;--blue:#3b82f6;--purple:#a855f7;--amber:#f5a623;
-13|  --green:#22e07a;--coral:#ff5d6c;--text:#dcefff;--text2:#5d7d96;--text3:#2a4860;
-14|  --mono:'Space Mono',monospace;--pixel:'Press Start 2P',monospace;
-15|}
-16|html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--mono);overflow:hidden;position:fixed;width:100%}
-17|#wrap{display:flex;flex-direction:column;height:100vh;height:100dvh}
-18|/* HEADER */
-19|header{flex-shrink:0;padding:8px 14px;background:rgba(10,18,28,.92);border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(12px);z-index:50}
-20|.brand{display:flex;align-items:center;gap:8px}
-21|.brand-mark{width:24px;height:24px;border:2px solid var(--cyan);display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(35,227,255,.3),inset 0 0 12px rgba(35,227,255,.1)}
-22|.brand-mark i{width:5px;height:5px;background:var(--cyan);box-shadow:0 0 6px var(--cyan);animation:blink 1.4s steps(2) infinite}
-23|.brand-name{font-family:var(--pixel);font-size:10px;color:var(--cyan);letter-spacing:1px;text-shadow:0 0 10px rgba(35,227,255,.5)}
-24|.brand-sub{font-size:7px;color:var(--text2);letter-spacing:2px;margin-top:2px}
-25|.hud{display:flex;align-items:center;gap:10px}
-26|.hud-pill{display:flex;align-items:center;gap:4px;font-size:8px;color:var(--text2)}
-27|.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
-28|#clock{font-size:9px;color:var(--text2);letter-spacing:1px}
-29|/* ROOM SIDEBAR */
-30|#room-sidebar{flex-shrink:0;display:flex;gap:2px;padding:6px 8px;background:rgba(6,10,16,.95);border-bottom:1px solid var(--border);overflow-x:auto;z-index:45;scrollbar-width:none}
-31|#room-sidebar::-webkit-scrollbar{display:none}
-32|.room-tab{flex-shrink:0;display:flex;align-items:center;gap:5px;padding:5px 8px;background:rgba(10,18,28,.8);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:all .12s;white-space:nowrap}
-33|.room-tab:hover{border-color:var(--text2)}
-34|.room-tab.active{background:rgba(35,227,255,.1);border-color:var(--cyan);box-shadow:0 0 8px rgba(35,227,255,.15)}
-35|.room-tab .rt-dot{width:6px;height:6px;border-radius:2px;flex-shrink:0}
-36|.room-tab .rt-name{font-size:8px;color:var(--text);letter-spacing:.5px}
-37|.room-tab .rt-work{font-size:7px;color:var(--text2);margin-top:1px}
-38|.back-hq{flex-shrink:0;display:none;align-items:center;gap:4px;padding:4px 8px;background:rgba(35,227,255,.08);border:1px solid rgba(35,227,255,.3);border-radius:4px;cursor:pointer;font-size:7px;color:var(--cyan);letter-spacing:1px;font-family:var(--mono);transition:all .12s}
-39|.back-hq:hover{background:rgba(35,227,255,.16)}
-40|.back-hq.show{display:flex}
-41|/* STAGE */
-42|#stage{flex:1;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#0a141f 0%,#05080d 100%)}
-43|#game{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);image-rendering:pixelated;image-rendering:crisp-edges;cursor:pointer}
-44|#scanlines{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.12) 3px,rgba(0,0,0,.12) 4px);z-index:10;mix-blend-mode:multiply}
-45|#vignette{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 140px 30px rgba(0,0,0,.7);z-index:11}
-46|/* AGENT TABS */
-47|#agent-bar{position:absolute;top:8px;left:8px;right:8px;display:flex;gap:4px;z-index:20;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
-48|#agent-bar::-webkit-scrollbar{display:none}
-49|#agent-bar.hidden{display:none}
-50|.agent-chip{flex-shrink:0;display:flex;align-items:center;gap:5px;padding:5px 8px;background:rgba(10,18,28,.85);border:1px solid var(--border2);border-radius:5px;cursor:pointer;backdrop-filter:blur(8px);transition:all .12s;white-space:nowrap}
-51|.agent-chip:hover{border-color:var(--text2);transform:translateY(-1px)}
-52|.agent-chip.boss{border-color:rgba(35,227,255,.4)}
-53|.chip-led{width:7px;height:7px;border-radius:2px;flex-shrink:0}
-54|.chip-name{font-size:8px;color:var(--text);letter-spacing:.5px}
-55|.chip-status{font-size:6px;letter-spacing:.5px;margin-top:1px}
-56|/* ZONE LABEL */
-57|#zone-label{position:absolute;bottom:8px;left:8px;font-family:var(--pixel);font-size:7px;color:var(--text3);letter-spacing:1px;z-index:20;pointer-events:none}
-58|/* BOTTOM CONSOLE */
-59|#console{flex-shrink:0;background:rgba(10,18,28,.95);border-top:1px solid var(--border2);backdrop-filter:blur(12px);z-index:40;display:flex;flex-direction:column;max-height:36vh}
-60|.console-tabs{display:flex;border-bottom:1px solid var(--border)}
-61|.ctab{flex:1;padding:7px;text-align:center;font-size:8px;letter-spacing:1px;color:var(--text2);cursor:pointer;border-right:1px solid var(--border);transition:all .12s;text-transform:uppercase}
-62|.ctab:last-child{border-right:none}
-63|.ctab.active{color:var(--cyan);background:rgba(35,227,255,.06);box-shadow:inset 0 -2px 0 var(--cyan)}
-64|.console-body{flex:1;overflow-y:auto;padding:8px 12px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
-65|.console-body::-webkit-scrollbar{width:5px}
-66|.console-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-67|.cpanel{display:none}
-68|.cpanel.active{display:block;animation:fade .15s}
-69|/* LOG */
-70|.log-line{display:flex;gap:6px;padding:3px 0;border-bottom:1px solid rgba(21,41,60,.5);font-size:10px;line-height:1.4}
-71|.log-line:last-child{border:none}
-72|.log-t{color:var(--text3);flex-shrink:0;font-size:8px;padding-top:1px}
-73|.log-agent{flex-shrink:0;font-weight:700;font-size:9px}
-74|.log-msg{color:var(--text2)}
-75|/* INSPECTOR */
-76|#insp-empty{color:var(--text3);font-size:10px;text-align:center;padding:16px}
-77|.insp-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-78|.insp-av{width:34px;height:34px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:var(--pixel);font-size:12px;flex-shrink:0}
-79|.insp-title{font-size:11px;color:var(--text);letter-spacing:.5px}
-80|.insp-role{font-size:8px;color:var(--text2);margin-top:2px;letter-spacing:1px}
-81|.insp-meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
-82|.insp-stat{background:rgba(35,227,255,.04);border:1px solid var(--border);border-radius:5px;padding:6px}
-83|.insp-stat-l{font-size:7px;color:var(--text3);letter-spacing:1px;text-transform:uppercase}
-84|.insp-stat-v{font-size:11px;color:var(--cyan);margin-top:2px;font-weight:700}
-85|.insp-out{background:#060c12;border:1px solid var(--border);border-radius:5px;padding:8px;font-size:9px;line-height:1.6;white-space:pre-wrap;color:var(--text2);max-height:100px;overflow-y:auto}
-86|.insp-out .hl{color:var(--cyan)}.insp-out .ok{color:var(--green)}.insp-out .wn{color:var(--amber)}
-87|/* PEEK — Live agent work view */
-88|#p-peek{display:flex;flex-direction:column;height:100%;padding:0}
-89|.peek-head{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(35,227,255,.06);border-bottom:1px solid var(--border);flex-shrink:0}
-90|.peek-av{width:22px;height:22px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:var(--pixel);font-size:10px;flex-shrink:0}
-91|.peek-name{font-size:10px;color:var(--text);letter-spacing:.5px}
-92|.peek-role{font-size:7px;color:var(--text2)}
-93|.peek-room{font-size:7px;color:var(--text3);margin-left:auto}
-94|.peek-body{flex:1;overflow-y:auto;padding:8px 10px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent;display:flex;flex-direction:column;gap:6px;min-height:0}
-95|.peek-body::-webkit-scrollbar{width:4px}
-96|.peek-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-97|.peek-card{border:1px solid var(--border2);border-radius:5px;overflow:hidden;animation:fade .2s}
-98|.peek-card-h{display:flex;align-items:center;gap:6px;padding:5px 8px;background:rgba(35,227,255,.05);border-bottom:1px solid var(--border2);font-size:8px;color:var(--text2);letter-spacing:.5px}
-99|.peek-card-h .pch-status{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-100|.peek-card-body{padding:7px 8px;font-size:8px;line-height:1.5;color:var(--text2)}
-101|.peek-file{color:var(--cyan);font-weight:700}
-102|.peek-action{color:var(--amber)}
-103|.peek-code{background:#060c12;border:1px solid var(--border);border-radius:3px;padding:6px;margin-top:4px;font-size:7px;line-height:1.4;white-space:pre-wrap;overflow-x:auto;color:var(--green);font-family:var(--mono);max-height:80px;overflow-y:auto}
-104|.peek-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);font-size:9px;gap:6px;padding:16px;text-align:center}
-105|.peek-stream{padding:0 8px 6px;display:flex;flex-direction:column;gap:4px}
-106|.peek-stream-item{display:flex;gap:5px;align-items:flex-start;padding:4px 0;border-bottom:1px solid rgba(21,41,60,.4);font-size:7px;color:var(--text2)}
-107|.peek-stream-item:last-child{border:none}
-108|.peek-stream-t{color:var(--text3);flex-shrink:0;font-size:7px}
-109|.peek-stream-f{color:var(--cyan)}
-110|/* METRICS */
-111|.met-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
-112|.met{background:rgba(35,227,255,.04);border:1px solid var(--border);border-radius:5px;padding:7px;text-align:center}
-113|.met-v{font-family:var(--pixel);font-size:11px;color:var(--cyan)}
-114|.met-l{font-size:6px;color:var(--text3);margin-top:4px;letter-spacing:1px}
-115|.bar-row{margin-bottom:7px}
-116|.bar-top{display:flex;justify-content:space-between;font-size:8px;color:var(--text2);margin-bottom:3px;letter-spacing:.5px}
-117|.bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
-118|.bar-fill{height:100%;transition:width 1s ease}
-119|/* TRIGGERS */
-120|.trig{width:100%;padding:9px;margin-bottom:6px;background:rgba(35,227,255,.05);border:1px solid var(--border2);border-radius:5px;color:var(--cyan);font-family:var(--mono);font-size:10px;letter-spacing:.5px;cursor:pointer;transition:all .12s;text-align:left;display:flex;align-items:center;gap:6px}
-121|.trig:hover{background:rgba(35,227,255,.12);border-color:var(--cyan)}
-122|.trig:active{transform:scale(.98)}
-123|.trig-ic{font-size:9px}
-124|@keyframes blink{0%,49%{opacity:1}50%,99%{opacity:.2}100%{opacity:1}}
-125|@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-126|@keyframes fade{from{opacity:0}to{opacity:1}}
-127|@keyframes deskZoom{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
-128|@keyframes itemSlide{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
-129|/* DESK ZOOM OVERLAY */
-130|#desk-zoom{position:fixed;inset:0;z-index:999;display:none;background:rgba(5,8,13,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:deskZoom .35s cubic-bezier(.22,1,.36,1);cursor:pointer}
-131|#desk-zoom.open{display:flex;align-items:center;justify-content:center}
-132|#desk-top{position:relative;width:min(780px,90vw);height:min(480px,70vh);background:linear-gradient(160deg,#2a2238,#3a3048,#2e263c);border-radius:14px;border:1px solid rgba(255,255,255,.08);box-shadow:0 24px 80px rgba(0,0,0,.6);overflow:hidden;cursor:default;animation:deskZoom .4s cubic-bezier(.22,1,.36,1)}
-133|#desk-top::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 48px,rgba(255,255,255,.012) 48px,rgba(255,255,255,.012) 49px);pointer-events:none}
-134|.desk-top-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.06);position:relative;z-index:1}
-135|.desk-top-title{font-family:'Press Start 2P',monospace;font-size:8px;color:#23e3ff;letter-spacing:1px;text-shadow:0 0 10px rgba(35,227,255,.3)}
-136|.desk-top-title span{color:rgba(255,255,255,.2);font-family:'Space Mono',monospace}
-137|.desk-top-close{width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,.06);background:rgba(255,70,70,.08);color:rgba(255,255,255,.4);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit}
-138|.desk-top-close:hover{background:rgba(255,70,70,.2);border-color:rgba(255,70,70,.3);color:#ff5d6c}
-139|.desk-items-wrap{position:relative;z-index:1;padding:16px 20px;overflow-y:auto;height:calc(100% - 52px);display:flex;flex-wrap:wrap;gap:14px;align-content:flex-start;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.06) transparent}
-140|.desk-items-wrap::-webkit-scrollbar{width:4px}
-141|.desk-items-wrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:3px}
-142|.desk-item-card{width:130px;padding:12px 10px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:8px;cursor:pointer;transition:all .25s;animation:itemSlide .4s cubic-bezier(.22,1,.36,1) both}
-143|.desk-item-card:hover{transform:translateY(-3px);background:rgba(35,227,255,.06);border-color:rgba(35,227,255,.2);box-shadow:0 8px 24px rgba(35,227,255,.08)}
-144|.desk-item-card:active{transform:translateY(-1px) scale(.97)}
-145|.desk-item-ic{font-size:26px;display:block;margin-bottom:6px}
-146|.desk-item-title{font-size:10px;color:rgba(255,255,255,.75);margin-bottom:4px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-family:'Space Mono',monospace}
-147|.desk-item-meta{font-size:8px;color:rgba(255,255,255,.2);display:flex;justify-content:space-between;align-items:center}
-148|.desk-item-badge{padding:1px 6px;border-radius:3px;font-size:7px;text-transform:uppercase;letter-spacing:.5px;font-family:'Space Mono',monospace}
-149|.desk-item-badge.doc{background:rgba(35,227,255,.12);color:#23e3ff}
-150|.desk-item-badge.pdf{background:rgba(255,70,70,.12);color:#ff5d6c}
-151|.desk-item-badge.img{background:rgba(34,224,122,.12);color:#22e07a}
-152|.desk-item-badge.code{background:rgba(245,166,35,.12);color:#f5a623}
-153|.desk-item-badge.audio{background:rgba(168,85,247,.12);color:#a855f7}
-154|.desk-item-badge.other{background:rgba(255,255,255,.04);color:rgba(255,255,255,.2)}
-155|.desk-empty-items{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:rgba(255,255,255,.08);z-index:1;pointer-events:none}
-156|.desk-empty-items .dei-ic{font-size:40px;margin-bottom:8px;display:block}
-157|.desk-empty-items .dei-txt{font-family:'Press Start 2P',monospace;font-size:7px;letter-spacing:1px}
-158|@media(min-width:900px){
-159|  #wrap{flex-direction:row}
-160|  header{position:absolute;top:0;left:140px;right:360px;border:none;background:transparent;z-index:60}
-161|  #room-sidebar{flex-direction:column;width:130px;border-bottom:none;border-right:1px solid var(--border);overflow-x:hidden;overflow-y:auto;padding:48px 6px 10px}
-162|  #stage{flex:1}
-163|  #console{max-height:none;height:100vh;height:100dvh;width:360px;border-top:none;border-left:1px solid var(--border2)}
-164|  #agent-bar{top:48px;left:140px}
-165|  #zone-label{left:148px}
-166|}
-167|</style>
-168|</head>
-169|<body>
-170|<div id="wrap">
-171|  <header>
-172|    <div class="brand">
-173|      <div class="brand-mark"><i></i></div>
-174|      <div>
-175|        <div class="brand-name" id="header-name">BUKIMIND</div>
-176|        <div class="brand-sub" id="header-sub">VIRTUAL OFFICE</div>
-177|      </div>
-178|    </div>
-179|    <div class="hud">
-180|      <div class="hud-pill"><span class="live-dot"></span>ONLINE</div>
-181|      <div class="back-hq" id="back-btn" onclick="window.bukimind.goHome()">← HQ</div>
-182|      <div id="clock">--:--:--</div>
-183|    </div>
-184|  </header>
-185|
-186|  <!-- ROOM SIDEBAR -->
-187|  <div id="room-sidebar"></div>
-188|
-189|  <div id="stage">
-190|    <div id="agent-bar" class="hidden"></div>
-191|    <canvas id="game"></canvas>
-192|    <div id="scanlines"></div>
-193|    <div id="vignette"></div>
-194|    <div id="zone-label">BUKIMIND // HQ</div>
-195|  </div>
-196|
-197|  <div id="console">
-198|    <div class="console-tabs">
-199|      <div class="ctab active" data-tab="log">Activity</div>
-200|      <div class="ctab" data-tab="insp">Inspect</div>
-201|      <div class="ctab" data-tab="met">System</div>
-202|      <div class="ctab" data-tab="trig">Trigger</div>
-203|      <div class="ctab" data-tab="peek">Peek</div>
-204|    </div>
-205|    <div class="console-body">
-206|      <div class="cpanel active" id="p-log"></div>
-207|      <div class="cpanel" id="p-insp"><div id="insp-empty">Tap an agent to inspect →</div></div>
-208|      <div class="cpanel" id="p-met">
-209|        <div class="met-grid">
-210|          <div class="met"><div class="met-v" id="m-tasks">0</div><div class="met-l">TASKS</div></div>
-211|          <div class="met"><div class="met-v" id="m-agents">0</div><div class="met-l">AGENTS</div></div>
-212|          <div class="met"><div class="met-v" id="m-prs">0</div><div class="met-l">PRs</div></div>
-213|          <div class="met"><div class="met-v" id="m-up">0m</div><div class="met-l">UPTIME</div></div>
-214|        </div>
-215|        <div id="bar-container"><div class="bar-row"><div class="bar-top"><span>—</span><span>—</span></div><div class="bar"><div class="bar-fill" style="width:0;background:var(--text3)"></div></div></div></div>
-216|      </div>
-217|      <div class="cpanel" id="p-trig">
-218|        <button class="trig" onclick="window.bukimind.trigger('loveflix')"><span class="trig-ic">▶</span> Scan LoveFlix repo</button>
-219|        <button class="trig" onclick="window.bukimind.trigger('bookistudio')"><span class="trig-ic">▶</span> Check BookiStudio pipeline</button>
-220|        <button class="trig" onclick="window.bukimind.trigger('hq')"><span class="trig-ic">▶</span> Return to HQ</button>
-221|        <button class="trig" onclick="openDeskZoom()"><span class="trig-ic">🗄️</span> View Boss Desk</button>
-222|      </div>
-223|      <div class="cpanel" id="p-peek">
-224|        <div class="peek-head" id="peek-head">
-225|          <div class="peek-av" id="peek-av" style="background:rgba(35,227,255,.1);color:var(--cyan)">⌘</div>
-226|          <div><div class="peek-name" id="peek-name">Select an agent</div><div class="peek-role" id="peek-role">Tap an agent to peek into their work</div></div>
-227|          <div class="peek-room" id="peek-room"></div>
-228|        </div>
-229|        <div class="peek-body" id="peek-body">
-230|          <div class="peek-empty" id="peek-empty">
-231|            <span style="font-size:18px">🔍</span>
-232|            <span>Tap an agent to see what they're working on</span>
-233|            <span style="font-size:7px;color:var(--text3)">Live activity, files being edited, code being written</span>
-234|          </div>
-235|          <div id="peek-content" style="display:none">
-236|            <div class="peek-card" id="peek-current-card">
-237|              <div class="peek-card-h">
-238|                <span class="pch-status" id="peek-status-dot" style="background:var(--green)"></span>
-239|                <span id="peek-status-label">Working</span>
-240|                <span style="margin-left:auto;font-size:7px;color:var(--text3)" id="peek-since">—</span>
-241|              </div>
-242|              <div class="peek-card-body" id="peek-card-body">
-243|                <span class="peek-action" id="peek-action">Working on</span>
-244|                <span class="peek-file" id="peek-file">—</span>
-245|                <div class="peek-code" id="peek-code">—</div>
-246|              </div>
-247|            </div>
-248|            <div style="margin-top:8px;font-size:7px;color:var(--text3);letter-spacing:1px;padding:0 2px 4px">RECENT ACTIVITY</div>
-249|            <div class="peek-stream" id="peek-stream"></div>
-250|          </div>
-251|        </div>
-252|      </div>
-253|    </div>
-254|  </div>
-255|</div>
-256|
-257|<!-- DESK ZOOM OVERLAY -->
-258|<div id="desk-zoom" onclick="closeDeskZoom(event)">
-259|  <div id="desk-top" onclick="event.stopPropagation()">
-260|    <div class="desk-top-bar">
-261|      <div class="desk-top-title">BOSS DESK <span>// COMPLETED WORK</span></div>
-262|      <button class="desk-top-close" onclick="closeDeskZoom()">✕</button>
-263|    </div>
-264|    <div class="desk-items-wrap" id="desk-items-wrap">
-265|      <div class="desk-empty-items" id="desk-empty-items">
-266|        <span class="dei-ic">🗄️</span>
-267|        <div class="dei-txt">NO COMPLETED WORK YET</div>
-268|      </div>
-269|    </div>
-270|  </div>
-271|</div>
-272|<script>
-273|/* ---------- DESK ZOOM ---------- */
-274|const OFFICE_BACKEND = 'https://office.bookistudios.com/api/office';
-275|const DESK_BOSS_URL = OFFICE_BACKEND;
-276|
-277|/* ===== MODERN OFFICE SPRITE SYSTEM ===== */
-278|// Load tilesheet from CDN instead of base64
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BUKIMIND // Virtual Office</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#05080d;--panel:#0a121c;--panel2:#0d1825;--border:#15293c;
+  --border2:#203a54;--cyan:#23e3ff;--blue:#3b82f6;--purple:#a855f7;--amber:#f5a623;
+  --green:#22e07a;--coral:#ff5d6c;--text:#dcefff;--text2:#5d7d96;--text3:#2a4860;
+  --mono:'Space Mono',monospace;--pixel:'Press Start 2P',monospace;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--mono);overflow:hidden;position:fixed;width:100%}
+#wrap{display:flex;flex-direction:column;height:100vh;height:100dvh}
+/* HEADER */
+header{flex-shrink:0;padding:8px 14px;background:rgba(10,18,28,.92);border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(12px);z-index:50}
+.brand{display:flex;align-items:center;gap:8px}
+.brand-mark{width:24px;height:24px;border:2px solid var(--cyan);display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(35,227,255,.3),inset 0 0 12px rgba(35,227,255,.1)}
+.brand-mark i{width:5px;height:5px;background:var(--cyan);box-shadow:0 0 6px var(--cyan);animation:blink 1.4s steps(2) infinite}
+.brand-name{font-family:var(--pixel);font-size:10px;color:var(--cyan);letter-spacing:1px;text-shadow:0 0 10px rgba(35,227,255,.5)}
+.brand-sub{font-size:7px;color:var(--text2);letter-spacing:2px;margin-top:2px}
+.hud{display:flex;align-items:center;gap:10px}
+.hud-pill{display:flex;align-items:center;gap:4px;font-size:8px;color:var(--text2)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+#clock{font-size:9px;color:var(--text2);letter-spacing:1px}
+/* ROOM SIDEBAR */
+#room-sidebar{flex-shrink:0;display:flex;gap:2px;padding:6px 8px;background:rgba(6,10,16,.95);border-bottom:1px solid var(--border);overflow-x:auto;z-index:45;scrollbar-width:none}
+#room-sidebar::-webkit-scrollbar{display:none}
+.room-tab{flex-shrink:0;display:flex;align-items:center;gap:5px;padding:5px 8px;background:rgba(10,18,28,.8);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:all .12s;white-space:nowrap}
+.room-tab:hover{border-color:var(--text2)}
+.room-tab.active{background:rgba(35,227,255,.1);border-color:var(--cyan);box-shadow:0 0 8px rgba(35,227,255,.15)}
+.room-tab .rt-dot{width:6px;height:6px;border-radius:2px;flex-shrink:0}
+.room-tab .rt-name{font-size:8px;color:var(--text);letter-spacing:.5px}
+.room-tab .rt-work{font-size:7px;color:var(--text2);margin-top:1px}
+.back-hq{flex-shrink:0;display:none;align-items:center;gap:4px;padding:4px 8px;background:rgba(35,227,255,.08);border:1px solid rgba(35,227,255,.3);border-radius:4px;cursor:pointer;font-size:7px;color:var(--cyan);letter-spacing:1px;font-family:var(--mono);transition:all .12s}
+.back-hq:hover{background:rgba(35,227,255,.16)}
+.back-hq.show{display:flex}
+/* STAGE */
+#stage{flex:1;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#0a141f 0%,#05080d 100%)}
+#game{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);image-rendering:pixelated;image-rendering:crisp-edges;cursor:pointer}
+#scanlines{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.12) 3px,rgba(0,0,0,.12) 4px);z-index:10;mix-blend-mode:multiply}
+#vignette{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 140px 30px rgba(0,0,0,.7);z-index:11}
+/* AGENT TABS */
+#agent-bar{position:absolute;top:8px;left:8px;right:8px;display:flex;gap:4px;z-index:20;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+#agent-bar::-webkit-scrollbar{display:none}
+#agent-bar.hidden{display:none}
+.agent-chip{flex-shrink:0;display:flex;align-items:center;gap:5px;padding:5px 8px;background:rgba(10,18,28,.85);border:1px solid var(--border2);border-radius:5px;cursor:pointer;backdrop-filter:blur(8px);transition:all .12s;white-space:nowrap}
+.agent-chip:hover{border-color:var(--text2);transform:translateY(-1px)}
+.agent-chip.boss{border-color:rgba(35,227,255,.4)}
+.chip-led{width:7px;height:7px;border-radius:2px;flex-shrink:0}
+.chip-name{font-size:8px;color:var(--text);letter-spacing:.5px}
+.chip-status{font-size:6px;letter-spacing:.5px;margin-top:1px}
+/* ZONE LABEL */
+#zone-label{position:absolute;bottom:8px;left:8px;font-family:var(--pixel);font-size:7px;color:var(--text3);letter-spacing:1px;z-index:20;pointer-events:none}
+/* BOTTOM CONSOLE */
+#console{flex-shrink:0;background:rgba(10,18,28,.95);border-top:1px solid var(--border2);backdrop-filter:blur(12px);z-index:40;display:flex;flex-direction:column;max-height:36vh}
+.console-tabs{display:flex;border-bottom:1px solid var(--border)}
+.ctab{flex:1;padding:7px;text-align:center;font-size:8px;letter-spacing:1px;color:var(--text2);cursor:pointer;border-right:1px solid var(--border);transition:all .12s;text-transform:uppercase}
+.ctab:last-child{border-right:none}
+.ctab.active{color:var(--cyan);background:rgba(35,227,255,.06);box-shadow:inset 0 -2px 0 var(--cyan)}
+.console-body{flex:1;overflow-y:auto;padding:8px 12px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.console-body::-webkit-scrollbar{width:5px}
+.console-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.cpanel{display:none}
+.cpanel.active{display:block;animation:fade .15s}
+/* LOG */
+.log-line{display:flex;gap:6px;padding:3px 0;border-bottom:1px solid rgba(21,41,60,.5);font-size:10px;line-height:1.4}
+.log-line:last-child{border:none}
+.log-t{color:var(--text3);flex-shrink:0;font-size:8px;padding-top:1px}
+.log-agent{flex-shrink:0;font-weight:700;font-size:9px}
+.log-msg{color:var(--text2)}
+/* INSPECTOR */
+#insp-empty{color:var(--text3);font-size:10px;text-align:center;padding:16px}
+.insp-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.insp-av{width:34px;height:34px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:var(--pixel);font-size:12px;flex-shrink:0}
+.insp-title{font-size:11px;color:var(--text);letter-spacing:.5px}
+.insp-role{font-size:8px;color:var(--text2);margin-top:2px;letter-spacing:1px}
+.insp-meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.insp-stat{background:rgba(35,227,255,.04);border:1px solid var(--border);border-radius:5px;padding:6px}
+.insp-stat-l{font-size:7px;color:var(--text3);letter-spacing:1px;text-transform:uppercase}
+.insp-stat-v{font-size:11px;color:var(--cyan);margin-top:2px;font-weight:700}
+.insp-out{background:#060c12;border:1px solid var(--border);border-radius:5px;padding:8px;font-size:9px;line-height:1.6;white-space:pre-wrap;color:var(--text2);max-height:100px;overflow-y:auto}
+.insp-out .hl{color:var(--cyan)}.insp-out .ok{color:var(--green)}.insp-out .wn{color:var(--amber)}
+/* PEEK — Live agent work view */
+#p-peek{display:flex;flex-direction:column;height:100%;padding:0}
+.peek-head{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(35,227,255,.06);border-bottom:1px solid var(--border);flex-shrink:0}
+.peek-av{width:22px;height:22px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:var(--pixel);font-size:10px;flex-shrink:0}
+.peek-name{font-size:10px;color:var(--text);letter-spacing:.5px}
+.peek-role{font-size:7px;color:var(--text2)}
+.peek-room{font-size:7px;color:var(--text3);margin-left:auto}
+.peek-body{flex:1;overflow-y:auto;padding:8px 10px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent;display:flex;flex-direction:column;gap:6px;min-height:0}
+.peek-body::-webkit-scrollbar{width:4px}
+.peek-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.peek-card{border:1px solid var(--border2);border-radius:5px;overflow:hidden;animation:fade .2s}
+.peek-card-h{display:flex;align-items:center;gap:6px;padding:5px 8px;background:rgba(35,227,255,.05);border-bottom:1px solid var(--border2);font-size:8px;color:var(--text2);letter-spacing:.5px}
+.peek-card-h .pch-status{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.peek-card-body{padding:7px 8px;font-size:8px;line-height:1.5;color:var(--text2)}
+.peek-file{color:var(--cyan);font-weight:700}
+.peek-action{color:var(--amber)}
+.peek-code{background:#060c12;border:1px solid var(--border);border-radius:3px;padding:6px;margin-top:4px;font-size:7px;line-height:1.4;white-space:pre-wrap;overflow-x:auto;color:var(--green);font-family:var(--mono);max-height:80px;overflow-y:auto}
+.peek-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);font-size:9px;gap:6px;padding:16px;text-align:center}
+.peek-stream{padding:0 8px 6px;display:flex;flex-direction:column;gap:4px}
+.peek-stream-item{display:flex;gap:5px;align-items:flex-start;padding:4px 0;border-bottom:1px solid rgba(21,41,60,.4);font-size:7px;color:var(--text2)}
+.peek-stream-item:last-child{border:none}
+.peek-stream-t{color:var(--text3);flex-shrink:0;font-size:7px}
+.peek-stream-f{color:var(--cyan)}
+/* METRICS */
+.met-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.met{background:rgba(35,227,255,.04);border:1px solid var(--border);border-radius:5px;padding:7px;text-align:center}
+.met-v{font-family:var(--pixel);font-size:11px;color:var(--cyan)}
+.met-l{font-size:6px;color:var(--text3);margin-top:4px;letter-spacing:1px}
+.bar-row{margin-bottom:7px}
+.bar-top{display:flex;justify-content:space-between;font-size:8px;color:var(--text2);margin-bottom:3px;letter-spacing:.5px}
+.bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;transition:width 1s ease}
+/* TRIGGERS */
+.trig{width:100%;padding:9px;margin-bottom:6px;background:rgba(35,227,255,.05);border:1px solid var(--border2);border-radius:5px;color:var(--cyan);font-family:var(--mono);font-size:10px;letter-spacing:.5px;cursor:pointer;transition:all .12s;text-align:left;display:flex;align-items:center;gap:6px}
+.trig:hover{background:rgba(35,227,255,.12);border-color:var(--cyan)}
+.trig:active{transform:scale(.98)}
+.trig-ic{font-size:9px}
+@keyframes blink{0%,49%{opacity:1}50%,99%{opacity:.2}100%{opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes deskZoom{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
+@keyframes itemSlide{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+/* DESK ZOOM OVERLAY */
+#desk-zoom{position:fixed;inset:0;z-index:999;display:none;background:rgba(5,8,13,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:deskZoom .35s cubic-bezier(.22,1,.36,1);cursor:pointer}
+#desk-zoom.open{display:flex;align-items:center;justify-content:center}
+#desk-top{position:relative;width:min(780px,90vw);height:min(480px,70vh);background:linear-gradient(160deg,#2a2238,#3a3048,#2e263c);border-radius:14px;border:1px solid rgba(255,255,255,.08);box-shadow:0 24px 80px rgba(0,0,0,.6);overflow:hidden;cursor:default;animation:deskZoom .4s cubic-bezier(.22,1,.36,1)}
+#desk-top::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 48px,rgba(255,255,255,.012) 48px,rgba(255,255,255,.012) 49px);pointer-events:none}
+.desk-top-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.06);position:relative;z-index:1}
+.desk-top-title{font-family:'Press Start 2P',monospace;font-size:8px;color:#23e3ff;letter-spacing:1px;text-shadow:0 0 10px rgba(35,227,255,.3)}
+.desk-top-title span{color:rgba(255,255,255,.2);font-family:'Space Mono',monospace}
+.desk-top-close{width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,.06);background:rgba(255,70,70,.08);color:rgba(255,255,255,.4);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit}
+.desk-top-close:hover{background:rgba(255,70,70,.2);border-color:rgba(255,70,70,.3);color:#ff5d6c}
+.desk-items-wrap{position:relative;z-index:1;padding:16px 20px;overflow-y:auto;height:calc(100% - 52px);display:flex;flex-wrap:wrap;gap:14px;align-content:flex-start;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.06) transparent}
+.desk-items-wrap::-webkit-scrollbar{width:4px}
+.desk-items-wrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:3px}
+.desk-item-card{width:130px;padding:12px 10px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:8px;cursor:pointer;transition:all .25s;animation:itemSlide .4s cubic-bezier(.22,1,.36,1) both}
+.desk-item-card:hover{transform:translateY(-3px);background:rgba(35,227,255,.06);border-color:rgba(35,227,255,.2);box-shadow:0 8px 24px rgba(35,227,255,.08)}
+.desk-item-card:active{transform:translateY(-1px) scale(.97)}
+.desk-item-ic{font-size:26px;display:block;margin-bottom:6px}
+.desk-item-title{font-size:10px;color:rgba(255,255,255,.75);margin-bottom:4px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-family:'Space Mono',monospace}
+.desk-item-meta{font-size:8px;color:rgba(255,255,255,.2);display:flex;justify-content:space-between;align-items:center}
+.desk-item-badge{padding:1px 6px;border-radius:3px;font-size:7px;text-transform:uppercase;letter-spacing:.5px;font-family:'Space Mono',monospace}
+.desk-item-badge.doc{background:rgba(35,227,255,.12);color:#23e3ff}
+.desk-item-badge.pdf{background:rgba(255,70,70,.12);color:#ff5d6c}
+.desk-item-badge.img{background:rgba(34,224,122,.12);color:#22e07a}
+.desk-item-badge.code{background:rgba(245,166,35,.12);color:#f5a623}
+.desk-item-badge.audio{background:rgba(168,85,247,.12);color:#a855f7}
+.desk-item-badge.other{background:rgba(255,255,255,.04);color:rgba(255,255,255,.2)}
+.desk-empty-items{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:rgba(255,255,255,.08);z-index:1;pointer-events:none}
+.desk-empty-items .dei-ic{font-size:40px;margin-bottom:8px;display:block}
+.desk-empty-items .dei-txt{font-family:'Press Start 2P',monospace;font-size:7px;letter-spacing:1px}
+@media(min-width:900px){
+  #wrap{flex-direction:row}
+  header{position:absolute;top:0;left:140px;right:360px;border:none;background:transparent;z-index:60}
+  #room-sidebar{flex-direction:column;width:130px;border-bottom:none;border-right:1px solid var(--border);overflow-x:hidden;overflow-y:auto;padding:48px 6px 10px}
+  #stage{flex:1}
+  #console{max-height:none;height:100vh;height:100dvh;width:360px;border-top:none;border-left:1px solid var(--border2)}
+  #agent-bar{top:48px;left:140px}
+  #zone-label{left:148px}
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <div class="brand">
+      <div class="brand-mark"><i></i></div>
+      <div>
+        <div class="brand-name" id="header-name">BUKIMIND</div>
+        <div class="brand-sub" id="header-sub">VIRTUAL OFFICE</div>
+      </div>
+    </div>
+    <div class="hud">
+      <div class="hud-pill"><span class="live-dot"></span>ONLINE</div>
+      <div class="back-hq" id="back-btn" onclick="window.bukimind.goHome()">← HQ</div>
+      <div id="clock">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- ROOM SIDEBAR -->
+  <div id="room-sidebar"></div>
+
+  <div id="stage">
+    <div id="agent-bar" class="hidden"></div>
+    <canvas id="game"></canvas>
+    <div id="scanlines"></div>
+    <div id="vignette"></div>
+    <div id="zone-label">BUKIMIND // HQ</div>
+  </div>
+
+  <div id="console">
+    <div class="console-tabs">
+      <div class="ctab active" data-tab="log">Activity</div>
+      <div class="ctab" data-tab="insp">Inspect</div>
+      <div class="ctab" data-tab="met">System</div>
+      <div class="ctab" data-tab="trig">Trigger</div>
+      <div class="ctab" data-tab="peek">Peek</div>
+    </div>
+    <div class="console-body">
+      <div class="cpanel active" id="p-log"></div>
+      <div class="cpanel" id="p-insp"><div id="insp-empty">Tap an agent to inspect →</div></div>
+      <div class="cpanel" id="p-met">
+        <div class="met-grid">
+          <div class="met"><div class="met-v" id="m-tasks">0</div><div class="met-l">TASKS</div></div>
+          <div class="met"><div class="met-v" id="m-agents">0</div><div class="met-l">AGENTS</div></div>
+          <div class="met"><div class="met-v" id="m-prs">0</div><div class="met-l">PRs</div></div>
+          <div class="met"><div class="met-v" id="m-up">0m</div><div class="met-l">UPTIME</div></div>
+        </div>
+        <div id="bar-container"><div class="bar-row"><div class="bar-top"><span>—</span><span>—</span></div><div class="bar"><div class="bar-fill" style="width:0;background:var(--text3)"></div></div></div></div>
+      </div>
+      <div class="cpanel" id="p-trig">
+        <button class="trig" onclick="window.bukimind.trigger('loveflix')"><span class="trig-ic">▶</span> Scan LoveFlix repo</button>
+        <button class="trig" onclick="window.bukimind.trigger('bookistudio')"><span class="trig-ic">▶</span> Check BookiStudio pipeline</button>
+        <button class="trig" onclick="window.bukimind.trigger('hq')"><span class="trig-ic">▶</span> Return to HQ</button>
+        <button class="trig" onclick="openDeskZoom()"><span class="trig-ic">🗄️</span> View Boss Desk</button>
+      </div>
+      <div class="cpanel" id="p-peek">
+        <div class="peek-head" id="peek-head">
+          <div class="peek-av" id="peek-av" style="background:rgba(35,227,255,.1);color:var(--cyan)">⌘</div>
+          <div><div class="peek-name" id="peek-name">Select an agent</div><div class="peek-role" id="peek-role">Tap an agent to peek into their work</div></div>
+          <div class="peek-room" id="peek-room"></div>
+        </div>
+        <div class="peek-body" id="peek-body">
+          <div class="peek-empty" id="peek-empty">
+            <span style="font-size:18px">🔍</span>
+            <span>Tap an agent to see what they're working on</span>
+            <span style="font-size:7px;color:var(--text3)">Live activity, files being edited, code being written</span>
+          </div>
+          <div id="peek-content" style="display:none">
+            <div class="peek-card" id="peek-current-card">
+              <div class="peek-card-h">
+                <span class="pch-status" id="peek-status-dot" style="background:var(--green)"></span>
+                <span id="peek-status-label">Working</span>
+                <span style="margin-left:auto;font-size:7px;color:var(--text3)" id="peek-since">—</span>
+              </div>
+              <div class="peek-card-body" id="peek-card-body">
+                <span class="peek-action" id="peek-action">Working on</span>
+                <span class="peek-file" id="peek-file">—</span>
+                <div class="peek-code" id="peek-code">—</div>
+              </div>
+            </div>
+            <div style="margin-top:8px;font-size:7px;color:var(--text3);letter-spacing:1px;padding:0 2px 4px">RECENT ACTIVITY</div>
+            <div class="peek-stream" id="peek-stream"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DESK ZOOM OVERLAY -->
+<div id="desk-zoom" onclick="closeDeskZoom(event)">
+  <div id="desk-top" onclick="event.stopPropagation()">
+    <div class="desk-top-bar">
+      <div class="desk-top-title">BOSS DESK <span>// COMPLETED WORK</span></div>
+      <button class="desk-top-close" onclick="closeDeskZoom()">✕</button>
+    </div>
+    <div class="desk-items-wrap" id="desk-items-wrap">
+      <div class="desk-empty-items" id="desk-empty-items">
+        <span class="dei-ic">🗄️</span>
+        <div class="dei-txt">NO COMPLETED WORK YET</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+/* ---------- DESK ZOOM ---------- */
+const OFFICE_BACKEND = 'https://office.bookistudios.com/api/office';
+const DESK_BOSS_URL = OFFICE_BACKEND;
+
+/* ===== MODERN OFFICE SPRITE SYSTEM ===== */
+// Load tilesheet from external PNG (the pixel furniture sheet shipped in this repo)
 const TILESHEET_URL = 'spritesheet.png';
-280|
-281|... [OUTPUT TRUNCATED - 62236 chars omitted out of 112236 total] ...
-282|
-283|Io1iGAsLgE9FJZfLqW5rl9cDGE754z3povJ0ZhZVe+wwSxxUbir6F6zWLjQCvAYAAItmcGvr2tIMYB+njZxvN2FwcSG1ZuXLfPm17nn4mpXA0AGcBf/IoTpxebj48oo0pc/6iSAAgDGXjvBZv3AzTzw2OUV4z8kAcgEgN9M5OTeT2e1xjrBbEgAJJFk0AIJw/q9QKCgu4pCCYhgLKwghhm+++avPzxNJ+aqqbby663DYoVKpUXvssJcabTC+jq/tU7gXh4Cbsm0wm9pAyWSoNR7ny48YOQxrVr7M5njEhuC0g9OY954DOATgF2P58ozF7LP+y+hNfdt6jTv91p+E7AbX0Xd7vM8LBjf/JyoBEE1QToCzwLpcrmiakFBmzFwAi7kDLMui28qEnSBULlckmwZAkSUkp9PJd04AlEKhIDEYfX4X0ZQXqrsOh53NyclDu3tzF5kCNNafEHdIZPACTFj+6E/H+J15QN8UgGzSWSuw0vsqL6xfpzfw2gwAv/UnE4+/vodMA3aT1wCE7wmFwLmoBEA0QTmBPjfcVMVmtUKry2bJXDfSwJzJoAH4c3wKVQWNtrwQTSaNIcOKedUf6NupKLQl+FsGyzTkYcP7azH7nr49GgsWPoYN6zbygiFQeVI/wDnx1NYYeWEQSv2JhnR6z/c8hAAQ7RQgmqCcFwLEj/yPD17Wb7EESeeNVAPwLJ8smYkIwtUIIdZOBgxjgVwup3p7e+FPoyB7359Zsdzr3qGU96zf2slAqVSHXH8y46kdAFEaAROZ2DMZ6HHYYbN1RzQCR3okeQsi1QA8y8dChfUV1y4SV2oyZcjU6iizqU0kBNrbW/l5uj+tgrx/6eWXU6ufWyEqv2blyygpHUnVGo8HLC+s31OzDVZ/KuCpHSSlBSNVIEa8/oolKIxd6KkBRFo+2sxElZWzoM3KBtxpwQCwen1uxFu9q6q2gXW5vPIVyOXykDpfVdU2nDj+s8/yvjr/jJkLMO3WObj5lgdx8y0PwpA7ACqVmtgzKLjj7AFI+c7vC0kARAFZxusvDUAYvZhE9Q1HA/BVPtrchOp0DSznO9hLLr0CJWWlmDx5Kurrf44qNdiuXe/C5eoFTWtRW2Pk1tspKix7BCk/94HHA5Yn8QB6HA62x+Fg1RoNO3T4YGTQmdBlc+m4q6q28X8XGpIAiIL+1gB8RfWNdVTgSNDpDehxR78ROu5EC8NYeG/CSMvPnnt/wPJ2O7ec99kn7+CzT97Bn1b+DseO1PDCoGjwQF47mHbrHMyYuSDSj5OUSH4AUdDfGkC8/QAiQa3RwOXsoYTupnRmJsV0dkZ8z8rKWejuFod7Y1k25FiC4ZQn8QgijScQTeiwZEASAFEg1AD6axWgv+IBhMqWzWswadKd0GbpKFevi2UYC9SqdEQjABwOO9LTM0RGuPT0DJaiqJCi84RTXrisF0k8gVQPcCoJgCiQNAAObVY2bN1WtqSsFMVFJdi6dVNU4b/J8rIQhrGgsHiYKHafvxx7kZaPJJ4AUjzMuSQAokDSADhkcjl0eoMoeEgkkAi9ViuD/8fem8e3UZ37/5+RRqtHsmwrdshmx3HiJFCWsJSYkuZScGkvtOH3gxRuSy5QSiGUXrYCZSlNC9yEveU2tNAGCpfL0r4KF9oCCU1LuEkoSQwkIfEWJ05s412yPLZ2zfeP0RnNjEbSSCNbcjzv10svKTPzzKNxdM75nO15IhF+TIEssgIgROdhxwLoOdaZtAxXyf61194S7MWt+Q3X3JZkrxwPwCr7ltJ4AlMdvQLQgK4ApJAIQuIVfJkQh+WOhkOw2u1cwD8u7EIUh+NixwIYj+9CjC/KwYVfuxpmswXRaAS11Sego/Nzib240B842pu4V9xejJp4APJ4AvkYRC0kegWgAV0B8IRDQYyzo5g9uzorBdDYuAYGcEJY7nAohEWL61MWejnRaJT7wkmLqM6uAc47NIimpn0SiQ5AUuiV7CGS8FnFA4jHE1CqQMWV... [truncated]
-284|let tilesheetImg = null;
-285|let tilesheetLoaded = false;
-286|(function loadTileSheet(){
-287|  const img = new Image();
-288|  const ctx = document.createElement('canvas').getContext('2d');
-289|  img.onload = function(){
-290|    tilesheetImg = this;
-291|    tilesheetLoaded = true;
-292|    console.log('Tilesheet loaded: '+this.width+'x'+this.height);
-293|  };
-294|  img.src = TILESHEET_URL;
-295|})();
-296|
-297|// Sprite coords: [col, row] in the 16x16 tilesheet (256x848 = 16 cols x 53 rows)
-298|// Mapped from actual pixel analysis
-299|const T = {
-300|  // -- Floor --
-301|  floorWood1: [0,0], floorWood2: [1,0], floorWood3: [2,0],
-302|  floorWood4: [3,0], floorWood5: [4,0], floorWood6: [5,0],
-303|  floorWood7: [6,0], floorWood8: [7,0], floorWood9: [8,0], floorWood10: [9,0],
-304|  floorGray1: [10,0], floorGray2: [11,0], floorGray3: [12,0], floorGray4: [13,0],
-305|  floorPattern: [10,1],
-306|  floorAlt: [11,1],
-307|  // Dark floor variants  
-308|  floorDark: [15,0], floorDark2: [15,2],
-309|  // -- Walls (row 27: solid wall blocks) --
-310|  wallSolid: [0,27], wallSolid2: [1,27], wallSolid3: [2,27],
-311|  wallSolid4: [3,27], wallSolid5: [4,27], wallSolid6: [5,27],
-312|  // -- Desks (row 34-35: warm wood desks) --
-313|  deskTop: [0,34], deskTop2: [1,34],
-314|  deskFront: [2,35], deskFront2: [3,35],
-315|  deskSide: [4,34],
-316|  // -- Chairs (row 10-11: red cushions) --
-317|  chairBack: [10,10], chairSeat: [11,10],
-318|  // -- Monitors (row 8-9: blue screens) --
-319|  monitor: [8,8], monitor2: [9,8],
-320|  // -- Plants (row 47-50: green) --
-321|  plant1: [12,47], plant2: [13,47],
-322|  plant3: [12,48], plant4: [13,48],
-323|  // -- Decor --
-324|  bookshelf: [7,6], server: [6,6],
-325|  waterCooler: [5,6],
-326|};
-327|
-328|function drawSprite(name, x, y, w, h){
-329|  const s = T[name];
-330|  if(!s || !tilesheetLoaded || !tilesheetImg) return;
-331|  const [col, row] = s;
-332|  ctx.drawImage(tilesheetImg, col*16, row*16, 16, 16, x, y, w||16, h||16);
-333|}
-334|let deskZoomOpen = false;
-335|let deskPollTimer = null;
-336|
-337|function openDeskZoom(){
-338|  if(deskZoomOpen) return;
-339|  deskZoomOpen = true;
-340|  document.getElementById('desk-zoom').classList.add('open');
-341|  loadDeskItems();
-342|  // Poll for new items while open
-343|  if(deskPollTimer) clearInterval(deskPollTimer);
-344|  deskPollTimer = setInterval(loadDeskItems, 4000);
-345|}
-346|
-347|function closeDeskZoom(e){
-348|  if(e && e.target !== e.currentTarget) return; // only close when clicking backdrop
-349|  deskZoomOpen = false;
-350|  document.getElementById('desk-zoom').classList.remove('open');
-351|  if(deskPollTimer){ clearInterval(deskPollTimer); deskPollTimer = null; }
-352|}
-353|
-354|function getItemType(ext){
-355|  const m={doc:'doc',docx:'doc',txt:'doc',md:'doc',rtf:'doc',pdf:'pdf',png:'img',jpg:'img',jpeg:'img',gif:'img',webp:'img',svg:'img',py:'code',js:'code',html:'code',css:'code',ts:'code',json:'code',yaml:'code',yml:'code',mp3:'audio',wav:'audio',m4a:'audio',ogg:'audio'};
-356|  return m[ext]||'other';
-357|}
-358|function getItemIcon(ext){
-359|  const m={doc:'📄',docx:'📄',txt:'📝',md:'📝',rtf:'📄',pdf:'📕',png:'🖼️',jpg:'🖼️',jpeg:'🖼️',gif:'🖼️',webp:'🖼️',svg:'🖼️',py:'🐍',js:'📜',html:'🌐',css:'🎨',ts:'📘',json:'📋',yaml:'📋',yml:'📋',mp3:'🎵',wav:'🎵',m4a:'🎵',ogg:'🎵'};
-360|  return m[ext]||'📎';
-361|}
-362|
-363|async function loadDeskItems(){
-364|  // Track source: status feed (Pages) vs local server
-365|  let items = [];
-366|  let fromLocal = false;
-367|  
-368|  // Try status feed first (works from Pages)
-369|  if(window._deskItemsFromFeed && window._deskItemsFromFeed.length > 0){
-370|    items = window._deskItemsFromFeed;
-371|  }
-372|  
-373|  // If no items from feed, try local server
-374|  if(items.length === 0){
-375|    try{
-376|      const r = await fetch(DESK_BOSS_URL+'/files', {cache:'no-store'});
-377|      if(r.ok){ items = await r.json(); fromLocal = true; }
-378|    }catch(e){}
-379|  }
-380|  
-381|  const wrap = document.getElementById('desk-items-wrap');
-382|  const empty = document.getElementById('desk-empty-items');
-383|  wrap.querySelectorAll('.desk-item-card').forEach(el=>el.remove());
-384|  if(items.length === 0){
-385|    empty.style.display = 'block';
-386|  } else {
-387|    empty.style.display = 'none';
-388|    items.forEach((item, i) => {
-389|      const ext = item.ext || 'other';
-390|      const type = getItemType(ext);
-391|      const icon = getItemIcon(ext);
-392|      const card = document.createElement('div');
-393|      card.className = 'desk-item-card';
-394|      card.style.animationDelay = (i * 0.04) + 's';
-395|      card.innerHTML = `<span class="desk-item-ic">${icon}</span>
-396|        <div class="desk-item-title">${item.title}</div>
-397|        <div class="desk-item-meta">
-398|          <span>${item.time || ''}</span>
-399|          <span class="desk-item-badge ${type}">${ext.toUpperCase()}</span>
-400|        </div>`;
-401|      card.onclick = () => {
-402|        // Local server items: download directly
-403|        if(fromLocal && item.file){
-404|          const url = DESK_BOSS_URL+'/files/'+item.file;
-405|          const a = document.createElement('a');
-406|          a.href = url; a.download = item.title; a.click();
-407|        } else {
-408|          // Status feed items: file is only on the local machine
-409|          const fname = item.file || item.title || 'file';
-410|          window.bukimind.log('DESK', 'File: "' + (item.title||'unknown') + '" is on your Mac at ~/.hermes/boss-desk/items/' + fname, '#23e3ff');
-411|        }
-412|      };
-413|      wrap.appendChild(card);
-414|    });
-415|  }
-416|}
-417|
-418|// Keyboard shortcut to close
-419|document.addEventListener('keydown', e => {
-420|  if(e.key === 'Escape' && deskZoomOpen) closeDeskZoom();
-421|});
-422|/* ============================================================
-423|   BUKIMIND VIRTUAL OFFICE — Multi-Room Edition
-424|   ============================================================ */
-425|const TILE = 16;
-426|const GW = 24, GH = 15;
-427|const WORLD_W = GW*TILE, WORLD_H = GH*TILE;
-428|
-429|const C = {
-430|  floor:'#1a2433', floorB:'#16202d', wallTop:'#2c3e54', wallFace:'#1c2a3a',
-431|  wallHi:'#3a5168', rug:'#13212e', rugEdge:'#1d3346',
-432|  cyan:'#23e3ff', blue:'#3b82f6', purple:'#a855f7', amber:'#f5a623',
-433|  green:'#22e07a', coral:'#ff5d6c',
-434|};
-435|
-436|/* ===== ROOM STATE ===== */
-437|let currentRoom = 'hq';
-438|let roomData = {};             // full rooms dict from feed
-439|let activeAgents = [];         // Agent instances for current room
-440|let activeById = {};           // lookup by id
-441|let roomAgentDefs = {};        // agent definitions keyed by room id
-442|let roomMetrics = {};          // metrics keyed by room id
-443|let hqChildren = [];          // rooms under hq
-444|let roomColors = ['#23e3ff','#3b82f6','#a855f7','#f5a623','#22e07a','#ff5d6c'];
-445|
-446|/* ===== DESK POSITIONS (6 slots, indexed) ===== */
-447|const DESK_POSITIONS = [
-448|  { dx:9, dy:10, w:4, seatX:10, seatY:11, big:true },   // boss
-449|  { dx:2,  dy:3, w:2, seatX:2,  seatY:4 },
-450|  { dx:7,  dy:3, w:2, seatX:7,  seatY:4 },
-451|  { dx:13, dy:3, w:2, seatX:13, seatY:4 },
-452|  { dx:18, dy:3, w:2, seatX:18, seatY:4 },
-453|  { dx:2,  dy:8, w:2, seatX:2,  seatY:9 },
-454|];
-455|
-456|/* decor: type + tile pos */
-457|const DECOR = [
-458|  {t:'plant', x:1, y:13},{t:'plant', x:21, y:13},{t:'plant', x:21, y:2},
-459|  {t:'cooler', x:1, y:2},{t:'coffee', x:21, y:8},{t:'server', x:21, y:11},
-460|  {t:'bookshelf', x:18, y:8},
-461|];
-462|
-463|/* ---------- BUILD BLOCKED GRID ---------- */
-464|let blocked = Array.from({length:GH},()=>Array(GW).fill(false));
-465|for(let x=0;x<GW;x++){blocked[0][x]=true;blocked[1][x]=true;blocked[GH-1][x]=true;}
-466|for(let y=0;y<GH;y++){blocked[y][0]=true;blocked[y][GW-1]=true;}
-467|blocked[GH-1][11]=false; blocked[GH-1][12]=false;
-468|DECOR.forEach(d=>{ if(blocked[d.y]&&blocked[d.y][d.x]!==undefined) blocked[d.y][d.x]=true; });
-469|// Don't block desk positions yet — we rebuild when agents load
-470|
-471|/* ---------- BFS PATHFINDING ---------- */
-472|function bfs(sx,sy,tx,ty){
-473|  if(sx===tx&&sy===ty) return [];
-474|  const key=(x,y)=>y*GW+x;
-475|  const q=[[sx,sy]]; const prev={}; prev[key(sx,sy)]=null; let head=0;
-476|  const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
-477|  while(head<q.length){
-478|    const [cx,cy]=q[head++];
-479|    if(cx===tx&&cy===ty){
-480|      const path=[]; let cur=key(tx,ty);
-481|      while(cur!==null){ const px=cur%GW, py=Math.floor(cur/GW); path.push([px,py]); cur=prev[cur]; }
-482|      return path.reverse().slice(1);
-483|    }
-484|    for(const [dx,dy] of dirs){
-485|      const nx=cx+dx, ny=cy+dy;
-486|      if(nx<0||ny<0||nx>=GW||ny>=GH) continue;
-487|      if(blocked[ny][nx]) continue;
-488|      const k=key(nx,ny);
-489|      if(k in prev) continue;
-490|      prev[k]=key(cx,cy); q.push([nx,ny]);
-491|    }
-492|  }
-493|  return [];
-494|}
-495|
-496|const WANDER=[[11,7],[6,11],[15,12],[11,11],[8,7],[16,7]];
-497|
-498|/* ---------- AGENT RUNTIME ---------- */
-499|class Agent{
-500|  constructor(def, deskIdx){
-501|
+
+let tilesheetImg = null;
+let tilesheetLoaded = false;
+(function loadTileSheet(){
+  const img = new Image();
+  const ctx = document.createElement('canvas').getContext('2d');
+  img.onload = function(){
+    tilesheetImg = this;
+    tilesheetLoaded = true;
+    console.log('Tilesheet loaded: '+this.width+'x'+this.height);
+  };
+  img.src = TILESHEET_URL;
+})();
+
+// Sprite coords: [col, row] in the 16x16 tilesheet (256x848 = 16 cols x 53 rows)
+// Mapped from actual pixel analysis
+const T = {
+  // -- Floor --
+  floorWood1: [0,0], floorWood2: [1,0], floorWood3: [2,0],
+  floorWood4: [3,0], floorWood5: [4,0], floorWood6: [5,0],
+  floorWood7: [6,0], floorWood8: [7,0], floorWood9: [8,0], floorWood10: [9,0],
+  floorGray1: [10,0], floorGray2: [11,0], floorGray3: [12,0], floorGray4: [13,0],
+  floorPattern: [10,1],
+  floorAlt: [11,1],
+  // Dark floor variants  
+  floorDark: [15,0], floorDark2: [15,2],
+  // -- Walls (row 27: solid wall blocks) --
+  wallSolid: [0,27], wallSolid2: [1,27], wallSolid3: [2,27],
+  wallSolid4: [3,27], wallSolid5: [4,27], wallSolid6: [5,27],
+  // -- Desks (row 34-35: warm wood desks) --
+  deskTop: [0,34], deskTop2: [1,34],
+  deskFront: [2,35], deskFront2: [3,35],
+  deskSide: [4,34],
+  // -- Chairs (row 10-11: red cushions) --
+  chairBack: [10,10], chairSeat: [11,10],
+  // -- Monitors (row 8-9: blue screens) --
+  monitor: [8,8], monitor2: [9,8],
+  // -- Plants (row 47-50: green) --
+  plant1: [12,47], plant2: [13,47],
+  plant3: [12,48], plant4: [13,48],
+  // -- Decor --
+  bookshelf: [7,6], server: [6,6],
+  waterCooler: [5,6],
+};
+
+function drawSprite(name, x, y, w, h){
+  const s = T[name];
+  if(!s || !tilesheetLoaded || !tilesheetImg) return;
+  const [col, row] = s;
+  ctx.drawImage(tilesheetImg, col*16, row*16, 16, 16, x, y, w||16, h||16);
+}
+let deskZoomOpen = false;
+let deskPollTimer = null;
+
+function openDeskZoom(){
+  if(deskZoomOpen) return;
+  deskZoomOpen = true;
+  document.getElementById('desk-zoom').classList.add('open');
+  loadDeskItems();
+  // Poll for new items while open
+  if(deskPollTimer) clearInterval(deskPollTimer);
+  deskPollTimer = setInterval(loadDeskItems, 4000);
+}
+
+function closeDeskZoom(e){
+  if(e && e.target !== e.currentTarget) return; // only close when clicking backdrop
+  deskZoomOpen = false;
+  document.getElementById('desk-zoom').classList.remove('open');
+  if(deskPollTimer){ clearInterval(deskPollTimer); deskPollTimer = null; }
+}
+
+function getItemType(ext){
+  const m={doc:'doc',docx:'doc',txt:'doc',md:'doc',rtf:'doc',pdf:'pdf',png:'img',jpg:'img',jpeg:'img',gif:'img',webp:'img',svg:'img',py:'code',js:'code',html:'code',css:'code',ts:'code',json:'code',yaml:'code',yml:'code',mp3:'audio',wav:'audio',m4a:'audio',ogg:'audio'};
+  return m[ext]||'other';
+}
+function getItemIcon(ext){
+  const m={doc:'📄',docx:'📄',txt:'📝',md:'📝',rtf:'📄',pdf:'📕',png:'🖼️',jpg:'🖼️',jpeg:'🖼️',gif:'🖼️',webp:'🖼️',svg:'🖼️',py:'🐍',js:'📜',html:'🌐',css:'🎨',ts:'📘',json:'📋',yaml:'📋',yml:'📋',mp3:'🎵',wav:'🎵',m4a:'🎵',ogg:'🎵'};
+  return m[ext]||'📎';
+}
+
+async function loadDeskItems(){
+  // Track source: status feed (Pages) vs local server
+  let items = [];
+  let fromLocal = false;
+  
+  // Try status feed first (works from Pages)
+  if(window._deskItemsFromFeed && window._deskItemsFromFeed.length > 0){
+    items = window._deskItemsFromFeed;
+  }
+  
+  // If no items from feed, try local server
+  if(items.length === 0){
+    try{
+      const r = await fetch(DESK_BOSS_URL+'/files', {cache:'no-store'});
+      if(r.ok){ items = await r.json(); fromLocal = true; }
+    }catch(e){}
+  }
+  
+  const wrap = document.getElementById('desk-items-wrap');
+  const empty = document.getElementById('desk-empty-items');
+  wrap.querySelectorAll('.desk-item-card').forEach(el=>el.remove());
+  if(items.length === 0){
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    items.forEach((item, i) => {
+      const ext = item.ext || 'other';
+      const type = getItemType(ext);
+      const icon = getItemIcon(ext);
+      const card = document.createElement('div');
+      card.className = 'desk-item-card';
+      card.style.animationDelay = (i * 0.04) + 's';
+      card.innerHTML = `<span class="desk-item-ic">${icon}</span>
+        <div class="desk-item-title">${item.title}</div>
+        <div class="desk-item-meta">
+          <span>${item.time || ''}</span>
+          <span class="desk-item-badge ${type}">${ext.toUpperCase()}</span>
+        </div>`;
+      card.onclick = () => {
+        // Local server items: download directly
+        if(fromLocal && item.file){
+          const url = DESK_BOSS_URL+'/files/'+item.file;
+          const a = document.createElement('a');
+          a.href = url; a.download = item.title; a.click();
+        } else {
+          // Status feed items: file is only on the local machine
+          const fname = item.file || item.title || 'file';
+          window.bukimind.log('DESK', 'File: "' + (item.title||'unknown') + '" is on your Mac at ~/.hermes/boss-desk/items/' + fname, '#23e3ff');
+        }
+      };
+      wrap.appendChild(card);
+    });
+  }
+}
+
+// Keyboard shortcut to close
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && deskZoomOpen) closeDeskZoom();
+});
+/* ============================================================
+   BUKIMIND VIRTUAL OFFICE — Multi-Room Edition
+   ============================================================ */
+const TILE = 16;
+const GW = 24, GH = 15;
+const WORLD_W = GW*TILE, WORLD_H = GH*TILE;
+
+const C = {
+  floor:'#1a2433', floorB:'#16202d', wallTop:'#2c3e54', wallFace:'#1c2a3a',
+  wallHi:'#3a5168', rug:'#13212e', rugEdge:'#1d3346',
+  cyan:'#23e3ff', blue:'#3b82f6', purple:'#a855f7', amber:'#f5a623',
+  green:'#22e07a', coral:'#ff5d6c',
+};
+
+/* ===== ROOM STATE ===== */
+let currentRoom = 'hq';
+let roomData = {};             // full rooms dict from feed
+let activeAgents = [];         // Agent instances for current room
+let activeById = {};           // lookup by id
+let roomAgentDefs = {};        // agent definitions keyed by room id
+let roomMetrics = {};          // metrics keyed by room id
+let hqChildren = [];          // rooms under hq
+let roomColors = ['#23e3ff','#3b82f6','#a855f7','#f5a623','#22e07a','#ff5d6c'];
+
+/* ===== DESK POSITIONS (6 slots, indexed) ===== */
+const DESK_POSITIONS = [
+  { dx:9, dy:10, w:4, seatX:10, seatY:11, big:true },   // boss
+  { dx:2,  dy:3, w:2, seatX:2,  seatY:4 },
+  { dx:7,  dy:3, w:2, seatX:7,  seatY:4 },
+  { dx:13, dy:3, w:2, seatX:13, seatY:4 },
+  { dx:18, dy:3, w:2, seatX:18, seatY:4 },
+  { dx:2,  dy:8, w:2, seatX:2,  seatY:9 },
+];
+
+/* decor: type + tile pos */
+const DECOR = [
+  {t:'plant', x:1, y:13},{t:'plant', x:21, y:13},{t:'plant', x:21, y:2},
+  {t:'cooler', x:1, y:2},{t:'coffee', x:21, y:8},{t:'server', x:21, y:11},
+  {t:'bookshelf', x:18, y:8},
+];
+
+/* ---------- BUILD BLOCKED GRID ---------- */
+let blocked = Array.from({length:GH},()=>Array(GW).fill(false));
+for(let x=0;x<GW;x++){blocked[0][x]=true;blocked[1][x]=true;blocked[GH-1][x]=true;}
+for(let y=0;y<GH;y++){blocked[y][0]=true;blocked[y][GW-1]=true;}
+blocked[GH-1][11]=false; blocked[GH-1][12]=false;
+DECOR.forEach(d=>{ if(blocked[d.y]&&blocked[d.y][d.x]!==undefined) blocked[d.y][d.x]=true; });
+// Don't block desk positions yet — we rebuild when agents load
+
+/* ---------- BFS PATHFINDING ---------- */
+function bfs(sx,sy,tx,ty){
+  if(sx===tx&&sy===ty) return [];
+  const key=(x,y)=>y*GW+x;
+  const q=[[sx,sy]]; const prev={}; prev[key(sx,sy)]=null; let head=0;
+  const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+  while(head<q.length){
+    const [cx,cy]=q[head++];
+    if(cx===tx&&cy===ty){
+      const path=[]; let cur=key(tx,ty);
+      while(cur!==null){ const px=cur%GW, py=Math.floor(cur/GW); path.push([px,py]); cur=prev[cur]; }
+      return path.reverse().slice(1);
+    }
+    for(const [dx,dy] of dirs){
+      const nx=cx+dx, ny=cy+dy;
+      if(nx<0||ny<0||nx>=GW||ny>=GH) continue;
+      if(blocked[ny][nx]) continue;
+      const k=key(nx,ny);
+      if(k in prev) continue;
+      prev[k]=key(cx,cy); q.push([nx,ny]);
+    }
+  }
+  return [];
+}
+
+const WANDER=[[11,7],[6,11],[15,12],[11,11],[8,7],[16,7]];
+
+/* ---------- AGENT RUNTIME ---------- */
+class Agent{
+  constructor(def, deskIdx){
+    Object.assign(this, def);
+    this.deskIdx = deskIdx;
+    const d = DESK_POSITIONS[deskIdx] || DESK_POSITIONS[0];
+    this.seatX=d.seatX; this.seatY=d.seatY;
+    this.dx=d.dx; this.dy=d.dy; this.w=d.w;
+    this.big=d.big||false;
+    this.boss = (deskIdx === 0);
+    // start near door
+    this.tx=11; this.ty=13;
+    this.x=this.tx*TILE+TILE/2; this.y=this.ty*TILE+TILE/2;
+    this.facing='up'; this.frame=0; this.frameT=0;
+    this.path=[]; this.moveT=0;
+    this.state='spawn'; this.stateT=0;
+    this.seated=false;
+    this.bubble=null; this.bubbleT=0;
+    this.code=Array.from({length:5},()=>({w:4+Math.random()*9,c:this.color||C.cyan}));
+    this.goTo(this.seatX,this.seatY, ()=>{ this.state='working'; this.seated=true; this.facing='up'; });
+  }
+  goTo(tx,ty,cb){
+    this.path=bfs(this.tx,this.ty,tx,ty);
+    this.pathCb=cb; this.seated=false;
+    this.state='walk';
+  }
+  setBubble(text,dur=3200){ this.bubble=text; this.bubbleT=dur; }
+  update(dt){
+    this.stateT+=dt;
+    if(this.bubbleT>0){ this.bubbleT-=dt; if(this.bubbleT<=0) this.bubble=null; }
+    this.frameT+=dt;
+    if(this.frameT>180){ this.frameT=0; this.frame=(this.frame+1)%2; }
+    if(this.state==='working'&&Math.random()>0.7){
+      this.code.shift(); this.code.push({w:4+Math.random()*9,c:this.color||C.cyan});
+    }
+    if(this.state==='walk'){
+      if(this.path.length===0){
+        this.tx=Math.round((this.x-TILE/2)/TILE); this.ty=Math.round((this.y-TILE/2)/TILE);
+        const cb=this.pathCb; this.pathCb=null; this.state='idle';
+        if(cb) cb();
+      } else {
+        const [ntx,nty]=this.path[0];
+        const targetX=ntx*TILE+TILE/2, targetY=nty*TILE+TILE/2;
+        const dx=targetX-this.x, dy=targetY-this.y;
+        const dist=Math.hypot(dx,dy);
+        const spd=0.045*dt;
+        if(Math.abs(dx)>Math.abs(dy)) this.facing=dx>0?'right':'left';
+        else this.facing=dy>0?'down':'up';
+        if(dist<spd){ this.x=targetX; this.y=targetY; this.tx=ntx; this.ty=nty; this.path.shift(); }
+        else { this.x+=dx/dist*spd; this.y+=dy/dist*spd; }
+      }
+    }
+  }
+}
+
+/* ---------- PIXEL DRAW HELPERS ---------- */
+let ctx, cw, ch;
+function px(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(x|0,y|0,w,h); }
+function shade(hex,amt){
+  const n=parseInt(hex.slice(1),16);
+  let r=(n>>16)+amt,g=((n>>8)&255)+amt,b=(n&255)+amt;
+  r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));
+  return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+}
+function hexA(hex,a){
+  const n=parseInt(hex.slice(1),16);
+  return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`;
+}
+
+/* ---------- DRAW: FLOOR + WALLS ---------- */
+function drawFloor(){
+  const hasSprites = tilesheetLoaded && tilesheetImg;
+  for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){
+    if(y===0) continue;
+    if(hasSprites){
+      const alt=(x+y)%2===0;
+      drawSprite(alt?'floorWood1':'floorGray1', x*TILE, y*TILE, TILE, TILE);
+    } else {
+      const alt=(x+y)%2===0;
+      px(x*TILE,y*TILE,TILE,TILE, alt?C.floor:C.floorB);
+      ctx.fillStyle='rgba(0,0,0,0.12)'; ctx.fillRect(x*TILE,y*TILE,TILE,1);
+    }
+  }
+  if(currentRoom==='hq'){
+    if(!hasSprites) px(2*TILE,3*TILE,20*TILE,9*TILE,'rgba(10,18,28,0.5)');
+  } else {
+    const r={x:8,y:9,w:6,h:4};
+    if(hasSprites){
+      // Rug area - draw darker floor
+      for(let dy=0;dy<4;dy++) for(let dx=0;dx<6;dx++)
+        drawSprite('floorDark', (r.x+dx)*TILE, (r.y+dy)*TILE, TILE, TILE);
+    } else {
+      px(r.x*TILE,r.y*TILE,r.w*TILE,r.h*TILE,C.rug);
+      ctx.strokeStyle=C.rugEdge; ctx.lineWidth=2;
+      ctx.strokeRect(r.x*TILE+2,r.y*TILE+2,r.w*TILE-4,r.h*TILE-4);
+    }
+  }
+}
+function drawWalls(){
+  const hasSprites = tilesheetLoaded && tilesheetImg;
+  for(let x=0;x<GW;x++){
+    if(hasSprites){
+      drawSprite('wallSolid', x*TILE, 0, TILE, TILE);
+      drawSprite('wallSolid2', x*TILE, TILE, TILE, TILE);
+      drawSprite('wallSolid3', x*TILE, TILE+TILE-4, TILE, TILE);
+    } else {
+      px(x*TILE,0,TILE,TILE,C.wallTop);
+      px(x*TILE,TILE,TILE,TILE,C.wallFace);
+      px(x*TILE,TILE+TILE-3,TILE,3,shade(C.wallFace,-14));
+      ctx.fillStyle='rgba(255,255,255,0.04)'; ctx.fillRect(x*TILE,0,TILE,2);
+    }
+  }
+  for(let y=2;y<GH;y++){
+    if(hasSprites){
+      drawSprite('wallSolid', 0, y*TILE, TILE, TILE);
+      drawSprite('wallSolid', (GW-1)*TILE, y*TILE, TILE, TILE);
+    } else {
+      px(0,y*TILE,TILE,TILE,C.wallFace); px(0,y*TILE,2,TILE,C.wallTop);
+      px((GW-1)*TILE,y*TILE,TILE,TILE,C.wallFace); px((GW-1)*TILE+TILE-2,y*TILE,2,TILE,C.wallTop);
+    }
+  }
+  for(let x=1;x<GW-1;x++){
+    if(x===11||x===12) continue;
+    if(hasSprites){
+      drawSprite('wallSolid4', x*TILE, (GH-1)*TILE, TILE, TILE);
+    } else {
+      px(x*TILE,(GH-1)*TILE,TILE,TILE,C.wallFace);
+      px(x*TILE,(GH-1)*TILE,TILE,3,C.wallTop);
+    }
+  }
+  px(11*TILE,(GH-1)*TILE,2*TILE,TILE,'#0a0f16');
+  px(11*TILE,(GH-1)*TILE,2*TILE,3,C.cyan);
+  ctx.fillStyle='rgba(35,227,255,0.15)'; ctx.fillRect(11*TILE,(GH-1)*TILE,2*TILE,TILE);
+}
+
+/* ---------- DRAW: ROOM WALLS (HQ mode partitions) ---------- */
+function drawRoomPartitions(){
+  // No separate walls needed
+}
+
+/* ---------- DRAW: KANBAN ---------- */
+function drawKanban(){
+  if(currentRoom==='hq') return; // no kanban in HQ
+  const bx=10*TILE, by=2, bw=4*TILE, bh=TILE+8;
+  px(bx,by,bw,bh,'#0e1a26');
+  ctx.strokeStyle='#2a4860'; ctx.lineWidth=1;
+  ctx.strokeRect(bx+0.5,by+0.5,bw-1,bh-1);
+  const cols=[C.coral,C.amber,C.green];
+  for(let c=0;c<3;c++){
+    for(let r=0;r<2;r++){
+      px(bx+6+c*(bw/3-2)+r*2, by+5+r*8, 6,5, cols[c]);
+    }
+  }
+}
+
+/* ---------- DRAW: DESKS ---------- */
+function drawDesk(agent){
+  const d = DESK_POSITIONS[agent.deskIdx];
+  const x=d.dx*TILE, y=d.dy*TILE, w=d.w*TILE;
+  const hasSprites = tilesheetLoaded && tilesheetImg;
+  if(hasSprites && d.w >= 2){
+    // Sprite desk
+    const cols = d.w;
+    for(let c=0;c<cols;c++){
+      drawSprite('deskTop', x+c*TILE, y, TILE, TILE);
+      drawSprite('deskFront', x+c*TILE, y+TILE, TILE, TILE);
+    }
+    if(agent.boss){
+      px(x, y+TILE-2, w, 2, hexA(C.cyan,0.6));
+      if(Math.floor(Date.now()/800)%2===0){
+        ctx.fillStyle='rgba(35,227,255,0.12)';
+        ctx.font='5px "Space Mono", monospace';
+        ctx.textAlign='center'; ctx.textBaseline='bottom';
+        ctx.fillText('[CLICK TO VIEW]', x+w/2, y-2);
+      }
+    }
+    return;
+  }
+  // Fallback: hand-drawn desk
+  const mw= d.big? 32 : 20, mx= x + (w-mw)/2, my= y-12;
+  px(mx+mw/2-2, my+12, 4, 4, '#0d1620');
+  px(mx-2,my-2,mw+4,16,'#05090e');
+  px(mx,my, mw,12, '#0a141d');
+  agent.code.forEach((ln,i)=>{
+    if(i>=6) return;
+    px(mx+2, my+2+i*1.7, Math.min(ln.w,mw-4), 1, agent.color||C.cyan);
+  });
+  ctx.fillStyle=hexA(agent.color||C.cyan,0.10); ctx.fillRect(mx-3,my-3,mw+6,18);
+  px(x,y, w,TILE, '#2a1f15');
+  px(x,y, w,3, '#3a2c1d');
+  px(x,y+TILE-3, w,3, '#1c140d');
+  px(x, y+TILE-2, w, 2, hexA(agent.color||C.cyan,0.5));
+  px(x+w/2-7, y+6, 14,4, '#11202d');
+  // Boss desk glow accent
+  if(agent.boss){
+    px(x, y+TILE-2, w, 2, hexA(C.cyan,0.6));
+    ctx.fillStyle=hexA(C.cyan,0.04);
+    ctx.beginPath(); ctx.ellipse(x+w/2, y+TILE+6, w*0.7, 10, 0,0,Math.PI*2); ctx.fill();
+    // Click hint
+    if(Math.floor(Date.now()/800)%2===0){
+      ctx.fillStyle='rgba(35,227,255,0.12)';
+      ctx.font='5px \"Space Mono\", monospace';
+      ctx.textAlign='center'; ctx.textBaseline='bottom';
+      ctx.fillText('[CLICK TO VIEW]', x+w/2, y-2);
+    }
+  } else {
+    ctx.fillStyle=hexA(agent.color||C.cyan,0.05);
+    ctx.beginPath(); ctx.ellipse(x+w/2, y+TILE+6, w*0.7, 10, 0,0,Math.PI*2); ctx.fill();
+  }
+}
+
+/* ---------- DRAW: CHAIR ---------- */
+function drawChair(seatX,seatY){
+  const x=seatX*TILE+TILE/2, y=seatY*TILE+TILE/2;
+  px(x-5,y-2,10,7,'#14202c');
+  px(x-5,y-7,10,5,'#1a2a38');
+  px(x-5,y-7,10,2,'#24384a');
+}
+
+/* ---------- DRAW: DECOR ---------- */
+function drawDecor(d){
+  const hasSprites = tilesheetLoaded && tilesheetImg;
+  if(hasSprites){
+    const x=d.x*TILE, y=d.y*TILE;
+    if(d.t==='plant'){ drawSprite('plant1',x,y,TILE,TILE); drawSprite('plant3',x,y+TILE/2,TILE,TILE); }
+    else if(d.t==='cooler'){ drawSprite('waterCooler',x,y,TILE,TILE); }
+    else if(d.t==='coffee'){ drawSprite('monitor',x,y,TILE,TILE); }
+    else if(d.t==='server'){ drawSprite('server',x,y,TILE,TILE); }
+    else if(d.t==='bookshelf'){ drawSprite('bookshelf',x,y,TILE,TILE); }
+    return;
+  }
+  if(currentRoom!=='hq'){
+    // Only show decor in room mode
+  }
+  const x=d.x*TILE, y=d.y*TILE;
+  if(d.t==='plant'){
+    px(x+5,y+9,6,6,'#3a2418'); px(x+4,y+11,8,4,'#2c1b10');
+    px(x+5,y+2,6,8,'#1d6b3a'); px(x+3,y+5,4,5,'#23824a'); px(x+9,y+4,4,6,'#1a5e34');
+    px(x+6,y,4,5,'#28935a');
+  } else if(d.t==='cooler'){
+    px(x+4,y+6,8,9,'#dfe9f0'); px(x+5,y+1,6,6,'#7fd4ff');
+    ctx.fillStyle=hexA('#7fd4ff',0.4); ctx.fillRect(x+5,y+1,6,6);
+    px(x+4,y+9,8,2,'#aac0d0');
+  } else if(d.t==='coffee'){
+    px(x+4,y+4,9,11,'#1a2a38'); px(x+5,y+6,7,4,'#0a141d');
+    px(x+6,y+7,5,2,C.amber); px(x+5,y+11,7,2,'#2a3e52');
+    px(x+11,y+5,2,2,C.green);
+  } else if(d.t==='server'){
+    px(x+4,y+1,9,14,'#0d1620');
+    for(let i=0;i<4;i++){ px(x+5,y+3+i*3,7,2,'#152230'); px(x+10,y+3+i*3,1,1, i%2?C.green:C.amber); }
+  } else if(d.t==='bookshelf'){
+    px(x+2,y+2,13,13,'#2a1f15');
+    const bc=[C.coral,C.blue,C.amber,C.green,C.purple];
+    for(let i=0;i<5;i++) px(x+4+i*2,y+4,1.5,5,bc[i]);
+    for(let i=0;i<4;i++) px(x+4+i*2,y+10,1.5,4,bc[(i+2)%5]);
+  }
+}
+
+/* ---------- DRAW: CHARACTER ---------- */
+function drawAgent(a){
+  const x=a.x, y=a.y;
+  ctx.fillStyle='rgba(0,0,0,0.3)';
+  ctx.beginPath(); ctx.ellipse(x, y+1, 5, 2.5, 0,0,Math.PI*2); ctx.fill();
+  const sk=a.skin||'#e8b98c', hr=a.hair||'#1a1a1a', sh=a.shirt||(a.color||C.cyan), pn=a.pants||'#16202d';
+  const f=a.frame;
+  const ox=x-5, oy=y-15;
+  if(a.seated){
+    px(ox+2,oy+4,6,4,hr);
+    px(ox+1,oy+8,8,6,sh);
+    px(ox+1,oy+9,2,4,shade(sh,-20));
+    px(ox+7,oy+9,2,4,shade(sh,-20));
+    if(f===0){ px(ox+2,oy+13,2,2,sk); px(ox+6,oy+13,2,2,sk); }
+    else { px(ox+3,oy+13,2,2,sk); px(ox+5,oy+13,2,2,sk); }
+    if(a.boss){ px(ox+1,oy+3,8,1,a.color||C.cyan); }
+    return;
+  }
+  if(a.facing==='down'){
+    px(ox+2,oy+1,6,5,hr);
+    px(ox+2,oy+5,6,3,sk);
+    px(ox+3,oy+6,1,1,'#0a0a0a'); px(ox+6,oy+6,1,1,'#0a0a0a');
+    px(ox+2,oy+8,6,5,sh);
+    px(ox+1,oy+8,1,4,shade(sh,-20)); px(ox+8,oy+8,1,4,shade(sh,-20));
+    if(f===0){ px(ox+2,oy+13,2,2,pn); px(ox+6,oy+13,2,2,pn); }
+    else { px(ox+3,oy+13,2,2,pn); px(ox+5,oy+13,2,2,pn); }
+  } else if(a.facing==='up'){
+    px(ox+2,oy+1,6,6,hr);
+    px(ox+2,oy+8,6,5,sh);
+    px(ox+1,oy+8,1,4,shade(sh,-20)); px(ox+8,oy+8,1,4,shade(sh,-20));
+    if(f===0){ px(ox+2,oy+13,2,2,pn); px(ox+6,oy+13,2,2,pn); }
+    else { px(ox+3,oy+13,2,2,pn); px(ox+5,oy+13,2,2,pn); }
+  } else {
+    const flip=a.facing==='right';
+    const M=(bx,by,bw,bh,c)=>{ const fx= flip? (ox+10-(bx-ox)-bw):bx; px(fx,by,bw,bh,c); };
+    M(ox+2,oy+1,5,5,hr);
+    M(ox+3,oy+5,4,3,sk);
+    M(ox+5,oy+6,1,1,'#0a0a0a');
+    M(ox+2,oy+8,5,5,sh);
+    M(ox+3,oy+9,2,3,shade(sh,-15));
+    if(f===0){ M(ox+2,oy+13,2,2,pn); M(ox+5,oy+13,2,2,pn); }
+    else { M(ox+3,oy+13,2,2,pn); }
+  }
+  if(a.boss){ px(ox+2,oy,6,1,a.color||C.cyan); }
+}
+
+/* ---------- SPEECH BUBBLE ---------- */
+function drawBubble(a, sctx, S, offX, offY){
+  if(!a.bubble) return;
+  const sx=offX + a.x*S, sy=offY + (a.y-18)*S;
+  sctx.font='10px "Space Mono", monospace';
+  const tw=sctx.measureText(a.bubble).width;
+  const pad=8, bw=tw+pad*2, bh=22;
+  const bx=sx-bw/2, by=sy-bh;
+  sctx.fillStyle='rgba(12,20,30,0.96)';
+  roundRect(sctx,bx,by,bw,bh,6); sctx.fill();
+  sctx.strokeStyle=a.color||C.cyan; sctx.lineWidth=1.5; sctx.stroke();
+  sctx.fillStyle='rgba(12,20,30,0.96)';
+  sctx.beginPath(); sctx.moveTo(sx-4,by+bh-1); sctx.lineTo(sx+4,by+bh-1); sctx.lineTo(sx,by+bh+5); sctx.fill();
+  sctx.fillStyle='#dcefff'; sctx.textBaseline='middle'; sctx.textAlign='center';
+  sctx.fillText(a.bubble, sx, by+bh/2);
+}
+
+/* ---------- DELIVERY (walking papers) ---------- */
+let deliveryAnim = null; // { agent_id, room_id, title, ext, ts, phase, timer, ... }
+
+function triggerDelivery(delivery){
+  if(!delivery || delivery.agent_id === undefined) return;
+  // Don't restart the same delivery
+  if(deliveryAnim && deliveryAnim.ts === delivery.ts) return;
+  
+  const agent = activeById[delivery.agent_id];
+  if(!agent) return;
+  
+  const bossDesk = DESK_POSITIONS[0];
+  const bx = bossDesk.seatX, by = bossDesk.seatY;
+  
+  deliveryAnim = {
+    ...delivery,
+    phase: 'walking',  // walking → placing → done
+    timer: 0,
+    startX: agent.tx, startY: agent.ty,
+    targetX: bx, targetY: by - 1,
+    agent: agent,
+    paperIcon: delivery.ext ? (delivery.ext.match(/pdf|doc|txt|md/) ? '📄' : '📎') : '📄',
+  };
+  
+  // Walk the agent to the boss desk
+  agent.setBubble('📄 Delivering...', 6000);
+  agent.goTo(bx, by - 1, () => {
+    deliveryAnim.phase = 'placing';
+    deliveryAnim.timer = 0;
+    agent.setBubble('📄 Placing on desk', 3000);
+  });
+  log('SYSTEM', `📄 ${delivery.title} walking to desk`, C.green);
+}
+
+function updateDelivery(dt){
+  if(!deliveryAnim) return;
+  const da = deliveryAnim;
+  da.timer += dt;
+  
+  if(da.phase === 'placing' && da.timer > 800){
+    da.phase = 'done';
+    da.agent.setBubble('✅ Done!', 2000);
+    da.agent.status = 'idle';
+    da.agent.goTo(da.startX, da.startY, () => {
+      da.agent.state = 'idle';
+      da.agent.seated = false;
+    });
+    log('SYSTEM', `📄 ${da.title} placed on Boss Desk`, C.green);
+  }
+  
+  if(da.phase === 'done' && da.timer > 4000){
+    deliveryAnim = null;
+  }
+}
+
+function drawDelivery(){
+  if(!deliveryAnim || deliveryAnim.phase === 'done') return;
+  const da = deliveryAnim;
+  const a = da.agent;
+  if(!a) return;
+  
+  // Draw papers above agent's head
+  if(da.phase === 'walking' || da.phase === 'placing'){
+    const px2 = a.x, py2 = a.y - 24 + (da.phase === 'placing' ? Math.sin(da.timer * 0.02) * 2 : 0);
+    ctx.fillStyle = '#f5f0e0';
+    ctx.fillRect(px2-5, py2-2, 10, 7);
+    ctx.fillStyle = '#e8e0c8';
+    ctx.fillRect(px2-4, py2-1, 8, 5);
+    ctx.fillStyle = '#d0c8a8';
+    ctx.fillRect(px2-3, py2, 6, 3);
+    // Tiny text on top paper
+    ctx.fillStyle = '#8a7a5a';
+    ctx.font = '3px monospace';
+    ctx.fillText('📄', px2-3, py2+5);
+  }
+}
+function roundRect(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
+
+/* ---------- NAMEPLATE ---------- */
+function drawNameplate(a, sctx, S, offX, offY){
+  const d=DESK_POSITIONS[a.deskIdx];
+  const sx=offX + (d.dx*TILE + d.w*TILE/2)*S;
+  const sy=offY + (d.dy*TILE + TILE + 3)*S;
+  sctx.font='7px "Press Start 2P", monospace';
+  sctx.textAlign='center'; sctx.textBaseline='top';
+  sctx.fillStyle=a.color||C.cyan;
+  sctx.fillText((a.name||a.id).toUpperCase(), sx, sy);
+}
+
+/* ---------- PARTICLES ---------- */
+const dust=Array.from({length:30},()=>({x:Math.random()*WORLD_W,y:Math.random()*WORLD_H,s:Math.random()*0.004+0.001,o:Math.random()}));
+function drawDust(dt){
+  dust.forEach(p=>{ p.y-=p.s*dt; if(p.y<0)p.y=WORLD_H; p.o+=0.01;
+    ctx.fillStyle=`rgba(120,180,220,${(Math.sin(p.o)*0.5+0.5)*0.12})`;
+    ctx.fillRect(p.x|0,p.y|0,1,1); });
+}
+
+/* ---------- BUILD AGENTS FROM ROOM DATA ---------- */
+function buildAgentsFromRoom(roomId){
+  activeAgents.forEach(a=>{ /* cleanup */ });
+  activeAgents = [];
+  activeById = {};
+  
+  const room = roomData[roomId];
+  if(!room || roomId==='hq') return;
+  
+  const defs = room.agents || [];
+  defs.forEach((def, idx)=>{
+    if(idx >= DESK_POSITIONS.length) return;
+    const color = roomColors[idx % roomColors.length];
+    // Generate glyph based on id
+    const glyphs = ['⬡','◈','◎','◆','◉','◇'];
+    const glyph = glyphs[idx] || '●';
+    const nameMap = {
+      orchestrator:'BUKIMIND',
+      system:'System',
+      gateway:'Gateway',
+      storage:'Storage',
+      deploy:'Deploy',
+      metrics:'Metrics',
+      intake:'Intake',
+      researcher:'Research',
+      planner:'Planner',
+      builder:'Build',
+      qa:'QA',
+      auditor:'Audit',
+      deployer:'Deployer',
+      tester:'Tester',
+      monitor:'Monitor',
+      docs:'Docs',
+    };
+    const name = nameMap[def.id] || def.id.charAt(0).toUpperCase()+def.id.slice(1);
+    const agentDef = {
+      id: def.id,
+      name: name,
+      role: (def.task||'Agent').slice(0,14),
+      project: room.name || roomId,
+      color: color,
+      glyph: glyph,
+      boss: idx === 0,
+      skin: idx===0?'#e8b98c':'#c98e6b',
+      hair: idx===0?'#1a1a1a':'#3a2515',
+      shirt: color,
+      pants: '#16202d',
+      status: def.status || 'idle',
+      task: def.task || 'Standing by',
+      output: def.output || 'No output yet',
+      bubble: def.bubble || null,
+    };
+    const a = new Agent(agentDef, idx);
+    activeAgents.push(a);
+    activeById[def.id] = a;
+  });
+}
+
+/* ===== ROOM SWITCHING ===== */
+function switchRoom(roomId){
+  if(roomId === currentRoom) return;
+  const wasHq = currentRoom === 'hq';
+  currentRoom = roomId;
+  const isHq = roomId === 'hq';
+  
+  // Update header
+  document.getElementById('header-name').textContent = isHq ? 'BUKIMIND' : (roomData[roomId]?.name||roomId).toUpperCase();
+  document.getElementById('header-sub').textContent = isHq ? 'VIRTUAL OFFICE' : `ROOM // ${roomId.toUpperCase()}`;
+  document.getElementById('zone-label').textContent = isHq ? 'BUKIMIND // HQ' : `${roomData[roomId]?.name||roomId} // LIVE`;
+  
+  // Back button
+  document.getElementById('back-btn').classList.toggle('show', !isHq);
+  
+  // Agent bar
+  document.getElementById('agent-bar').classList.toggle('hidden', isHq);
+  
+  // Rebuild agents
+  buildAgentsFromRoom(roomId);
+  renderChips();
+  renderRoomBar();
+  
+  // Rebuild blocked grid for desks if in room mode
+  rebuildBlocked();
+  
+  // Update metrics
+  updateMetrics();
+  
+  // Log room switch
+  log('SYSTEM', isHq ? 'Returned to HQ' : `Entered ${roomData[roomId]?.name||roomId}`, C.cyan);
+}
+
+function rebuildBlocked(){
+  blocked = Array.from({length:GH},()=>Array(GW).fill(false));
+  for(let x=0;x<GW;x++){blocked[0][x]=true;blocked[1][x]=true;blocked[GH-1][x]=true;}
+  for(let y=0;y<GH;y++){blocked[y][0]=true;blocked[y][GW-1]=true;}
+  blocked[GH-1][11]=false; blocked[GH-1][12]=false;
+  if(currentRoom !== 'hq'){
+    DESK_POSITIONS.forEach(d=>{for(let i=0;i<d.w;i++) blocked[d.dy][d.dx+i]=true;});
+  }
+  DECOR.forEach(d=>{ if(blocked[d.y]&&blocked[d.y][d.x]!==undefined) blocked[d.y][d.x]=true; });
+}
+
+/* ---------- RENDER ROOM BAR ---------- */
+function renderRoomBar(){
+  const bar = document.getElementById('room-sidebar');
+  const rooms = Object.keys(roomData).filter(k=>k!=='hq');
+  const allRooms = ['hq', ...rooms];
+  
+  bar.innerHTML = allRooms.map(rid=>{
+    const isActive = rid === currentRoom;
+    const r = roomData[rid] || {name:'HQ', agents:[]};
+    const name = rid==='hq' ? 'BUKIMIND HQ' : r.name;
+    const agents = r.agents || [];
+    const working = agents.filter(a=>a.status==='working').length;
+    const total = agents.length;
+    const colr = rid==='hq' ? C.cyan : (roomColors[rooms.indexOf(rid) % roomColors.length]);
+    return `<div class="room-tab ${isActive?'active':''}" onclick="window.bukimind.switchRoom('${rid}')">
+      <div class="rt-dot" style="background:${colr};${working>0?`box-shadow:0 0 6px ${colr}`:''}"></div>
+      <div><div class="rt-name">${name}</div>${!isActive?`<div class="rt-work">${working}/${total}</div>`:''}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- RENDER AGENT CHIPS ---------- */
+function renderChips(){
+  const bar = document.getElementById('agent-bar');
+  if(currentRoom==='hq'){ bar.innerHTML=''; return; }
+  bar.innerHTML=activeAgents.map(a=>{
+    const sc=a.status==='working'?(a.color||C.cyan):a.status==='done'?C.green:'#5d7d96';
+    return `<div class="agent-chip ${a.boss?'boss':''}" onclick="window.bukimind.inspect('${a.id}');window.bukimind.openPeek('${a.id}')">
+      <div class="chip-led" style="background:${sc};box-shadow:0 0 6px ${sc}"></div>
+      <div><div class="chip-name">${a.name}</div><div class="chip-status" style="color:${sc}">${a.status.toUpperCase()}</div></div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- INSPECTOR ---------- */
+let currentInspect=null;
+function inspect(id){
+  const a=activeById[id];
+  if(!a) return;
+  currentInspect=id;
+  const el=document.getElementById('p-insp');
+  el.innerHTML=`
+    <div class="insp-head">
+      <div class="insp-av" style="background:${hexA(a.color||C.cyan,0.15)};color:${a.color||C.cyan}">${a.glyph}</div>
+      <div><div class="insp-title">${a.name} Agent</div><div class="insp-role">${a.role||'Agent'} // ${a.status.toUpperCase()}</div></div>
+    </div>
+    <div class="insp-meta">
+      <div class="insp-stat"><div class="insp-stat-l">Room</div><div class="insp-stat-v">${a.project||'—'}</div></div>
+      <div class="insp-stat"><div class="insp-stat-l">Status</div><div class="insp-stat-v" style="color:${a.status==='idle'?'#5d7d96':(a.color||C.cyan)}">${a.status}</div></div>
+    </div>
+    <div style="font-size:8px;color:var(--text3);letter-spacing:1px;margin-bottom:5px">CURRENT TASK</div>
+    <div style="font-size:10px;color:var(--text);margin-bottom:10px">${a.task}</div>
+    <div style="font-size:8px;color:var(--text3);letter-spacing:1px;margin-bottom:5px">LIVE OUTPUT</div>
+    <div class="insp-out">${a.output}</div>`;
+}
+
+/* ---------- ACTIVITY LOG ---------- */
+const logs=[];
+function log(agent,msg,color){
+  const n=new Date();
+  const t=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
+  logs.unshift({t,agent,msg,color:color||'#5d7d96'});
+  if(logs.length>60)logs.pop();
+  const el=document.getElementById('p-log');
+  el.innerHTML=logs.map(l=>`<div class="log-line"><span class="log-t">${l.t}</span><span class="log-agent" style="color:${l.color}">${l.agent}</span><span class="log-msg">${l.msg}</span></div>`).join('');
+}
+
+/* ---------- TABS ---------- */
+function switchTab(name){
+  document.querySelectorAll('.ctab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  document.querySelectorAll('.cpanel').forEach(p=>p.classList.toggle('active',p.id==='p-'+name));
+}
+document.querySelectorAll('.ctab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
+
+/* ---------- PEEK — Live agent work view ---------- */
+let peekTarget = null; // { agent_id, room_id, name, glyph, color }
+
+function openPeek(agentId, roomId){
+  const rid = roomId || currentRoom;
+  const room = roomData[rid];
+  if(!room) return;
+  const def = (room.agents||[]).find(a=>a.id===agentId);
+  if(!def) return;
+
+  const glyphs = ['⬡','◈','◎','◆','◉','◇','○','□','△','☆'];
+  const idx = (room.agents||[]).indexOf(def);
+  const roomColors = ['#23e3ff','#3b82f6','#a855f7','#f5a623','#22e07a','#ff5d6c'];
+  const color = roomColors[idx % roomColors.length];
+  const glyph = glyphs[idx] || '●';
+
+  peekTarget = { agent_id: agentId, room_id: rid, name: def.name || agentId, glyph, color };
+
+  document.getElementById('peek-av').style.background = `rgba(${hexToRgb(color)},.15)`;
+  document.getElementById('peek-av').style.color = color;
+  document.getElementById('peek-av').textContent = glyph;
+  document.getElementById('peek-name').textContent = def.name || agentId;
+  document.getElementById('peek-role').textContent = def.task || 'Agent';
+  document.getElementById('peek-room').textContent = room.name || roomId;
+
+  // Load agent activity
+  renderPeek(def, room);
+
+  switchTab('peek');
+}
+
+function renderPeek(def, room){
+  const activity = def.activity || def.state || 'idle';
+  const statusColor = activity === 'working' ? 'var(--green)' : activity === 'idle' ? 'var(--text3)' : 'var(--amber)';
+  const statusLabel = activity === 'working' ? 'Working' : activity === 'idle' ? 'Idle' : activity.charAt(0).toUpperCase() + activity.slice(1);
+
+  document.getElementById('peek-status-dot').style.background = statusColor;
+  document.getElementById('peek-status-label').textContent = statusLabel;
+
+  const currentFile = def.currentFile || '—';
+  const action = def.action || 'Standing by';
+  const snippet = def.snippet || 'Waiting for activity...';
+  const since = def.lastActive || '—';
+
+  document.getElementById('peek-action').textContent = action;
+  document.getElementById('peek-file').textContent = currentFile;
+  document.getElementById('peek-code').textContent = snippet;
+  document.getElementById('peek-since').textContent = since;
+
+  // Recent activity stream
+  const stream = document.getElementById('peek-stream');
+  stream.innerHTML = '';
+  const recent = def.recentActivity || [];
+  if(recent.length === 0){
+    stream.innerHTML = '<div style="font-size:7px;color:var(--text3);padding:4px;text-align:center">No recent activity recorded</div>';
+  } else {
+    recent.slice(-15).reverse().forEach(item => {
+      const ts = item.ts || '';
+      const desc = item.desc || (item.file ? `Edited ${item.file}` : 'Activity');
+      const detail = item.detail || '';
+      stream.innerHTML += `<div class="peek-stream-item"><span class="peek-stream-t">${ts}</span><span class="peek-stream-f">${escapeHtml(desc)}</span></div>`;
+    });
+  }
+
+  document.getElementById('peek-empty').style.display = 'none';
+  document.getElementById('peek-content').style.display = 'block';
+}
+
+function hexToRgb(h){
+  h = h.replace('#','');
+  return parseInt(h.substring(0,2),16)+','+parseInt(h.substring(2,4),16)+','+parseInt(h.substring(4,6),16);
+}
+
+function escapeHtml(t){
+  const d = document.createElement('div');
+  d.textContent = t;
+  return d.innerHTML;
+}
+
+/* ---------- CLOCK + METRICS ---------- */
+let upMin=0;
+setInterval(()=>{
+  const n=new Date();
+  document.getElementById('clock').textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
+},1000);
+setInterval(()=>{ upMin++; const h=Math.floor(upMin/60),m=upMin%60; document.getElementById('m-up').textContent=h>0?`${h}h${m}m`:`${m}m`; },60000);
+
+function updateMetrics(){
+  if(currentRoom==='hq'){
+    document.getElementById('m-tasks').textContent = '—';
+    document.getElementById('m-agents').textContent = Object.keys(roomData).filter(k=>k!=='hq'&&k!=='default').length;
+    document.getElementById('m-prs').textContent = '—';
+    return;
+  }
+  const r = roomData[currentRoom];
+  if(!r||!r.metrics) return;
+  const m = r.metrics;
+  if(m.tasks!=null) document.getElementById('m-tasks').textContent=m.tasks;
+  if(m.agents!=null) document.getElementById('m-agents').textContent=m.agents;
+  if(m.prs!=null) document.getElementById('m-prs').textContent=m.prs;
+  // Bars
+  const bc = document.getElementById('bar-container');
+  if(m.bars){
+    bc.innerHTML = Object.keys(m.bars).map(k=>{
+      const v = m.bars[k];
+      const ci = roomColors[Object.keys(m.bars).indexOf(k) % roomColors.length];
+      return `<div class="bar-row"><div class="bar-top"><span>${k.toUpperCase()}</span><span id="b-${k}">${v}%</span></div><div class="bar"><div class="bar-fill" style="width:${v}%;background:${ci}"></div></div></div>`;
+    }).join('');
+  }
+}
+
+/* ---------- TRIGGERS ---------- */
+const triggerSeq={
+  loveflix:{room:'loveflix',lines:['LoveFlix audit triggered','Checking 847 files','Found 3 dead routes','Report sent']},
+  bookistudio:{room:'bookistudio',lines:['Pipeline check triggered','Checking inquiry queue','Plans in progress','All nominal']},
+  hq:{room:'hq',lines:['Switching to HQ view']},
+};
+function trigger(type){
+  const seq=triggerSeq[type];
+  if(!seq) return;
+  if(seq.room && seq.room!==currentRoom){
+    switchRoom(seq.room);
+    setTimeout(()=>{ switchTab('log'); },100);
+  } else {
+    switchTab('log');
+  }
+  // Run lines
+  let i=0;
+  const iv=setInterval(()=>{
+    if(i<seq.lines.length){ log('TRIGGER', seq.lines[i], C.cyan); i++; }
+    else { clearInterval(iv); log('SYSTEM', 'Done ✓', C.green); }
+  },800);
+}
+
+/* ---------- PUBLIC API ---------- */
+window.bukimind={
+  trigger, inspect, log, switchTab, switchRoom, goHome:()=>switchRoom('hq'),
+  openPeek,
+  updateAgent(id,patch){
+    const a=activeById[id]; if(!a) return;
+    Object.assign(a,patch); renderChips();
+    if(patch.status==='working'&&(a.state==='idle')){
+      a.goTo(a.seatX,a.seatY,()=>{a.state='working';a.seated=true;a.facing='up';});
+    }
+  },
+  setBubble(id,text,dur){ activeById[id]?.setBubble(text,dur); },
+  agents:activeById,
+};
+
+/* ---------- SETUP ---------- */
+const canvas=document.getElementById('game');
+ctx=canvas.getContext('2d');
+let S=2, offX=0, offY=0;
+function resize(){
+  const stage=document.getElementById('stage');
+  const rw=stage.clientWidth, rh=stage.clientHeight;
+  S=Math.max(1, Math.floor(Math.min(rw/WORLD_W, rh/WORLD_H)));
+  if(S*WORLD_W < rw*0.7) S=Math.min(rw/WORLD_W, rh/WORLD_H);
+  canvas.width=WORLD_W*S; canvas.height=WORLD_H*S;
+  canvas.style.width=(WORLD_W*S)+'px'; canvas.style.height=(WORLD_H*S)+'px';
+  offX=(rw-WORLD_W*S)/2; offY=(rh-WORLD_H*S)/2;
+}
+window.addEventListener('resize',resize); resize();
+
+/* ---------- RENDER LOOP ---------- */
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(50, now-last); last=now;
+  
+  if(currentRoom !== 'hq'){
+    activeAgents.forEach(a=>a.update(dt));
+    updateDelivery(dt);  // walking delivery animation
+  }
+  
+  ctx.save();
+  ctx.setTransform(S,0,0,S,0,0);
+  ctx.imageSmoothingEnabled=false;
+  ctx.clearRect(0,0,WORLD_W,WORLD_H);
+  
+  drawFloor();
+  drawWalls();
+  
+  if(currentRoom === 'hq'){
+    // HQ mode: clean landing — no room cards, just ambiance
+    drawDecor(DECOR[0]);
+    drawDecor(DECOR[1]);
+    drawDecor(DECOR[2]);
+    // Room name in center
+    ctx.fillStyle = hexA(C.cyan,0.06);
+    ctx.font = '7px "Press Start 2P", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('SELECT A ROOM', TILE*GW/2, TILE*GH/2 - 6);
+    ctx.font = '5px "Space Mono", monospace';
+    ctx.fillStyle = C.text3;
+    ctx.fillText('use the room bar above', TILE*GW/2, TILE*GH/2 + 8);
+  } else {
+    // Room mode: desks + agents
+    drawKanban();
+    DECOR.forEach(drawDecor);
+    
+    // Chairs
+    DESK_POSITIONS.forEach(d=>drawChair(d.seatX,d.seatY));
+    
+    // Y-sort desks + agents
+    const ents=[];
+    activeAgents.forEach(a=>ents.push({y:a.y, kind:'agent', a}));
+    DESK_POSITIONS.forEach((d,i)=>{
+      const a = activeAgents[i];
+      if(a) ents.push({y:d.dy*TILE+TILE, kind:'desk', a});
+    });
+    ents.sort((p,q)=>p.y-q.y);
+    ents.forEach(e=>{ if(e.kind==='desk') drawDesk(e.a); else drawAgent(e.a); });
+  }
+  
+  drawDust(dt);
+  // Walking animation
+  Object.values(activeById).forEach(a=>updateWalking(a, dt));
+  drawDelivery();  // papers above delivering agent
+  ctx.restore();
+  
+  // Screen-space overlays
+  ctx.setTransform(1,0,0,1,0,0);
+  if(currentRoom !== 'hq'){
+    activeAgents.forEach(a=>drawNameplate(a, ctx, S, 0, 0));
+    activeAgents.forEach(a=>drawBubble(a, ctx, S, 0, 0));
+  }
+  
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ---------- CLICK DETECTION ---------- */
+canvas.addEventListener('click',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)/S, my=(e.clientY-rect.top)/S;
+  
+  if(currentRoom === 'hq'){
+    // HQ mode — no room cards; use the room bar to navigate
+    return;
+  }
+  
+  // Room mode: click desk or agent
+  // Check boss desk click first
+  const bossDesk = DESK_POSITIONS[0];
+  const bx = bossDesk.dx*TILE, by = bossDesk.dy*TILE, bw = bossDesk.w*TILE;
+  if(mx>=bx && mx<=bx+bw && my>=by && my<=by+TILE+8){
+    openDeskZoom();
+    return;
+  }
+  // Check agents
+  let best=null,bd=1e9;
+  activeAgents.forEach(a=>{ const d=Math.hypot(mx-a.x,my-(a.y-7)); if(d<bd&&d<12){bd=d;best=a;} });
+  if(best){ inspect(best.id); switchTab('insp'); }
+});
+
+/* ---------- BFS PATHFINDING ---------- */
+const WALKABLE = new Set();
+function initWalkGrid(){
+  for(let y=2;y<GH-1;y++) for(let x=1;x<GW-1;x++) WALKABLE.add(x+','+y);
+  DESK_POSITIONS.forEach(d=>{
+    for(let dx=0;dx<d.w;dx++) for(let dy=0;dy<2;dy++) WALKABLE.delete((d.dx+dx)+','+(d.dy+dy));
+    WALKABLE.delete((d.dx+2)+','+(d.dy-1));
+  });
+}
+function bfsPath(sx,sy,tx,ty){
+  if(sx===tx && sy===ty) return [];
+  const q=[[sx,sy]], visited=new Set(), parent={};
+  const key=(x,y)=>x+','+y;
+  visited.add(key(sx,sy));
+  const dirs=[[0,1],[0,-1],[1,0],[-1,0]];
+  while(q.length){
+    const [cx,cy]=q.shift();
+    if(cx===tx && cy===ty){
+      const path=[]; let cur=key(tx,ty);
+      while(parent[cur]){ path.unshift(cur); cur=parent[cur]; }
+      return path.map(k=>k.split(',').map(Number));
+    }
+    for(const [dx,dy] of dirs){
+      const nx=cx+dx, ny=cy+dy, nk=key(nx,ny);
+      if(!visited.has(nk) && WALKABLE.has(nk)){
+        visited.add(nk); parent[nk]=key(cx,cy); q.push([nx,ny]);
+      }
+    }
+  }
+  return [];
+}
+function updateWalking(agent, dt){
+  if(!agent._walkPath || agent._walkPath.length===0) return;
+  const speed = 48;
+  const [tx,ty] = agent._walkPath[0];
+  const dx = tx*TILE+TILE/2 - agent.x;
+  const dy = ty*TILE+TILE/2 - agent.y;
+  const dist = Math.hypot(dx,dy);
+  if(dist < 1){ agent._walkPath.shift(); if(agent._walkPath.length===0) { agent._walkCb(); return; } return; }
+  const step = speed * dt;
+  agent.x += (dx/dist)*step;
+  agent.y += (dy/dist)*step;
+  agent.facing = Math.abs(dx)>Math.abs(dy) ? (dx>0?'right':'left') : (dy>0?'down':'up');
+  agent.frame = (Math.floor(performance.now()/200)%2===0)?0:1;
+}
+function walkAgentTo(agent, tx, ty, cb){
+  const sx=Math.round((agent.x-TILE/2)/TILE), sy=Math.round((agent.y-TILE/2)/TILE);
+  const path = bfsPath(sx,sy,tx,ty);
+  if(path.length===0){ cb && cb(); return; }
+  agent._walkPath = path;
+  agent._walkCb = cb || (()=>{});
+}
+
+/* ---------- CUSTOM AGENTS ROOM ---------- */
+function setupCustomAgentsRoom(){
+  const rid = 'custom-agents';
+  if(roomData[rid]) return rid;
+  roomData[rid] = { name: 'Custom Agents', agents: [], metrics: {tasks:0,prs:0,bars:[]}, icon: '🤖' };
+  return rid;
+}
+function updateCustomAgentsRoom(){
+  if(!roomData) return;
+  const rid = 'custom-agents';
+  const caRoom = roomData[rid];
+  if(!caRoom) return;
+  const customAgents = [];
+  Object.keys(roomData).forEach(k=>{
+    if(k==='hq' || k===rid || k==='default') return;
+    const room = roomData[k];
+    if(!room || !room.agents) return;
+    room.agents.forEach(a=>{
+      if(a.show_in_office) customAgents.push({ ...a, _customAgentSource: k });
+    });
+  });
+  caRoom.agents = customAgents;
+  caRoom.agentCount = customAgents.length;
+  renderRoomBar();
+}
+
+/* ---------- WEBSOCKET CLIENT ---------- */
+let ws = null;
+let wsReconnectTimer = null;
+let wsConnected = false;
+function connectWebSocket(){
+  if(ws && ws.readyState === WebSocket.OPEN) return;
+  // Connect to office backend
+  const wsUrl = 'wss://office.bookistudios.com/api/office/ws';
+  try{
+    ws = new WebSocket(wsUrl);
+    ws.onopen = function(){ wsConnected = true; log('SYSTEM','WebSocket connected ✓', C.green); };
+    ws.onmessage = function(e){
+      try{ const msg = JSON.parse(e.data); handleWsMessage(msg); }catch(err){}
+    };
+    ws.onclose = function(){
+      wsConnected = false;
+      log('SYSTEM','WebSocket disconnected, falling back to polling', C.amber);
+      if(wsReconnectTimer) clearTimeout(wsReconnectTimer);
+      wsReconnectTimer = setTimeout(connectWebSocket, 30000);
+    };
+    ws.onerror = function(){ wsConnected = false; };
+  }catch(e){ wsConnected = false; }
+}
+function handleWsMessage(msg){
+  if(msg.type === 'state_sync'){
+    if(msg.rooms){
+      roomData = msg.rooms;
+      hqChildren = Object.keys(roomData).filter(k=>k!=='hq'&&k!=='default');
+      if(msg.current_room && msg.current_room !== lastRoom){
+        switchRoom(msg.current_room);
+        lastRoom = msg.current_room;
+      }
+      renderRoomBar();
+      updateMetrics();
+      updateCustomAgentsRoom();
+    }
+  } else if(msg.type === 'event' || msg.type === 'activity'){
+    if(msg.agent && msg.msg) log(msg.agent, msg.msg, roomColors[hqChildren.indexOf(msg.agent.toLowerCase()) % roomColors.length] || C.cyan);
+    if(msg.agent_id && peekTarget && msg.agent_id === peekTarget.agent_id){
+      const def = (roomData[currentRoom]?.agents||[]).find(a=>a.id===msg.agent_id);
+      if(def) renderPeek(def, roomData[currentRoom]);
+    }
+  } else if(msg.type === 'desk_delivery'){
+    triggerDelivery(msg);
+  } else if(msg.type === 'agent_moved'){
+    if(currentRoom === msg.room_id || !msg.room_id){
+      const a = activeById[msg.agent_id];
+      if(a && msg.to_x !== undefined && msg.to_y !== undefined) walkAgentTo(a, msg.to_x, msg.to_y);
+    }
+  }
+}
+
+/* ---------- POLL STATUS.JSON (FALLBACK) ---------- */
+let lastEventKey='';
+let lastRoom = 'hq';
+async function pollHermes(){
+  try{
+    const r=await fetch('/status',{cache:'no-store'});
+    if(!r.ok) return;
+    const data=await r.json();
+    
+    // Update room data — with fallback for old flat format
+    if(data.rooms){
+      roomData = data.rooms;
+    } else if(data.agents && Array.isArray(data.agents)){
+      // Old flat status.json — migrate on the fly
+      roomData = {
+        "hq": {"name": "BUKIMIND HQ", "agents": [], "metrics": data.metrics || {tasks:0,prs:0,bars:{}}},
+        "main": {"name": "Main Room", "agents": data.agents, "metrics": data.metrics || {tasks:0,prs:0,bars:{}}}
+      };
+      data.current_room = "main";
+    }
+    hqChildren = Object.keys(roomData).filter(k=>k!=='hq'&&k!=='default');
+    
+    // Handle room switch from server
+    const newRoom = data.current_room || 'hq';
+    if(newRoom !== lastRoom){
+      lastRoom = newRoom;
+      switchRoom(newRoom);
+    }
+    
+    // Update agents in current room
+    if(currentRoom !== 'hq' && roomData[currentRoom]){
+      const defs = roomData[currentRoom].agents || [];
+      let peekDirty = false;
+      defs.forEach(x=>{
+        const a=activeById[x.id];
+        if(!a) return; // will be rebuilt on next switch if needed
+        if(x.task!==undefined) a.task=x.task;
+        if(x.output!==undefined) a.output=x.output;
+        if(x.bubble) a.setBubble(x.bubble, 4000);
+        if(x.status!==undefined && x.status!==a.status){
+          a.status=x.status;
+          if(x.status==='working' && (a.state==='idle')){
+            a.goTo(a.seatX,a.seatY,()=>{a.state='working';a.seated=true;a.facing='up';});
+          }
+          if(x.status==='done'){ a.setBubble('Done ✓',3000); }
+        }
+        // Sync peek data
+        if(x.activity!==undefined) a.activity=x.activity;
+        if(x.currentFile!==undefined) a.currentFile=x.currentFile;
+        if(x.action!==undefined) a.action=x.action;
+        if(x.snippet!==undefined) a.snippet=x.snippet;
+        if(x.lastActive!==undefined) a.lastActive=x.lastActive;
+        if(x.recentActivity!==undefined) a.recentActivity=x.recentActivity;
+        if(x.currentFile || x.snippet) peekDirty = true;
+      });
+      renderChips();
+      if(currentInspect) inspect(currentInspect);
+      // Refresh peek if target agent's data changed
+      if(peekDirty && peekTarget){
+        const updatedDef = (roomData[currentRoom]?.agents||[]).find(a=>a.id===peekTarget.agent_id);
+        if(updatedDef) renderPeek(updatedDef, roomData[currentRoom]);
+      }
+    }
+    
+    // Update room bar
+    renderRoomBar();
+    
+    // Update metrics
+    updateMetrics();
+    updateCustomAgentsRoom();
+    
+    // Handle desk delivery animation
+    if(data.desk_delivery && currentRoom !== 'hq'){
+      triggerDelivery(data.desk_delivery);
+    }
+    
+    // Sync desk items from status feed
+    if(data.desk_items && Array.isArray(data.desk_items)){
+      window._deskItemsFromFeed = data.desk_items;
+    }
+    
+    // Events
+    const evs=data.events||[];
+    if(evs.length){
+      const key=JSON.stringify(evs[0]);
+      if(key!==lastEventKey){
+        lastEventKey=key;
+        evs.slice(0,3).forEach(e=>{
+          log(e.agent, e.msg, roomColors[hqChildren.indexOf(e.agent.toLowerCase()) % roomColors.length] || C.cyan);
+        });
+      }
+    }
+    
+  }catch(e){ /* feed not ready */ }
+}
+
+/* ---------- BOOT ---------- */
+initWalkGrid();
+setupCustomAgentsRoom();
+connectWebSocket();
+log('SYSTEM','Connecting to Hermes feed…',C.cyan);
+pollHermes();
+setInterval(pollHermes, 5000);
+
+renderRoomBar();
+buildAgentsFromRoom('hq');
+rebuildBlocked();
+</script>
+</body>
+</html>
