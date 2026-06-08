@@ -327,8 +327,8 @@ const SP = {
   laptop2:['obj',34,24,2,3],         // open laptop (facing right)
   papers:['obj',39,33,2,2],          // stacked papers / binder
   deskLamp:['obj',27,36,2,3],        // articulated desk lamp
-  // -- Compatibility aliases used elsewhere --
-  chairBack:['obj',30,7,2,3], chairSeat:['obj',30,7,2,3],
+  // -- Office chair, back view (agent sits facing up into it) --
+  chairBack:['obj',33,7,2,4], chairSeat:['obj',33,7,2,4],
   plant1:['obj',15,2,2,5], plant3:['obj',15,2,2,5],
   waterCooler:['obj',24,28,2,6],
 };
@@ -471,8 +471,9 @@ document.addEventListener('keydown', e => {
    BUKIMIND VIRTUAL OFFICE — Multi-Room Edition
    ============================================================ */
 const TILE = 16;
-const GW = 24, GH = 15;
+const GW = 28, GH = 17;
 const WORLD_W = GW*TILE, WORLD_H = GH*TILE;
+const DOOR_X = 13;   // door / spawn column (centre of the bottom wall, 2 tiles wide)
 
 const C = {
   floor:'#1a2433', floorB:'#16202d', wallTop:'#2c3e54', wallFace:'#1c2a3a',
@@ -496,31 +497,37 @@ let occupiedDesks = 0;        // how many desks the current room actually uses
    Two tight rows of cubicles on the left/centre, manager office on the right,
    mirroring the pack developer's demo scene. */
 const DESK_POSITIONS = [
-  { dx:16, dy:9, w:4, seatX:18, seatY:10, big:true },   // boss / manager office (on rug)
+  { dx:20, dy:10, w:4, seatX:22, seatY:11, big:true },  // boss / manager office (on rug, lower-right)
   { dx:2,  dy:3, w:3, seatX:3,  seatY:4 },   // cubicle row 1 — a
   { dx:6,  dy:3, w:3, seatX:7,  seatY:4 },   // row 1 — b
   { dx:10, dy:3, w:3, seatX:11, seatY:4 },   // row 1 — c
-  { dx:2,  dy:8, w:3, seatX:3,  seatY:9 },   // cubicle row 2 — a
-  { dx:6,  dy:8, w:3, seatX:7,  seatY:9 },   // row 2 — b
+  { dx:2,  dy:9, w:3, seatX:3,  seatY:10 },  // cubicle row 2 — a
+  { dx:6,  dy:9, w:3, seatX:7,  seatY:10 },  // row 2 — b
 ];
 
-/* decor: type + tile pos — pushed to the perimeter, right side filled out */
+/* Static (agent-less) cubicles — drawn as furniture to fill the open plan
+   like the demo. Same footprint/blocking as a desk but no one sits there. */
+const STATIC_DESKS = [
+  { dx:16, dy:3, w:3 }, { dx:20, dy:3, w:3 },   // right half of cubicle row 1
+  { dx:16, dy:9, w:3 },                          // right half of cubicle row 2
+];
+
+/* decor: type + tile pos — perimeter + a lounge zone */
 const DECOR = [
   // top wall
-  {t:'coffee', x:1, y:1},{t:'bookshelf', x:5, y:1},{t:'server', x:9, y:1},
-  {t:'bookshelf', x:14, y:1},{t:'plant', x:21, y:1},
+  {t:'coffee', x:1, y:1},{t:'bookshelf', x:5, y:1},{t:'server', x:24, y:1},{t:'plant', x:26, y:1},
   // left wall
-  {t:'cooler', x:1, y:6},{t:'plant', x:1, y:13},
-  // right side — lounge / utility zone so it isn't empty
-  {t:'plant', x:22, y:3},{t:'coffee', x:22, y:6},{t:'server', x:22, y:9},{t:'plant', x:22, y:13},
-  {t:'cooler', x:14, y:5},{t:'bookshelf', x:14, y:8},
+  {t:'cooler', x:1, y:7},{t:'plant', x:1, y:15},
+  // right + lounge so it isn't empty
+  {t:'plant', x:26, y:5},{t:'bookshelf', x:26, y:9},{t:'coffee', x:13, y:13},
+  {t:'cooler', x:26, y:13},{t:'plant', x:26, y:15},{t:'server', x:10, y:13},
 ];
 
 /* ---------- BUILD BLOCKED GRID ---------- */
 let blocked = Array.from({length:GH},()=>Array(GW).fill(false));
 for(let x=0;x<GW;x++){blocked[0][x]=true;blocked[1][x]=true;blocked[GH-1][x]=true;}
 for(let y=0;y<GH;y++){blocked[y][0]=true;blocked[y][GW-1]=true;}
-blocked[GH-1][11]=false; blocked[GH-1][12]=false;
+blocked[GH-1][DOOR_X]=false; blocked[GH-1][DOOR_X+1]=false;
 DECOR.forEach(d=>{ if(blocked[d.y]&&blocked[d.y][d.x]!==undefined) blocked[d.y][d.x]=true; });
 // Don't block desk positions yet — we rebuild when agents load
 
@@ -562,7 +569,7 @@ class Agent{
     this.big=d.big||false;
     this.boss = (deskIdx === 0);
     // start near door
-    this.tx=11; this.ty=13;
+    this.tx=DOOR_X; this.ty=GH-2;
     this.x=this.tx*TILE+TILE/2; this.y=this.ty*TILE+TILE/2;
     this.facing='up'; this.frame=0; this.frameT=0;
     this.path=[]; this.moveT=0;
@@ -624,7 +631,7 @@ function hexA(hex,a){
 function drawFloor(){
   const hasSprites = tilesheetLoaded && tilesheetImg;
   for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){
-    if(y===0) continue;
+    // floor covers every interior row; only the very top row is wall
     if(hasSprites){
       const alt=(x+y)%2===0;
       drawSprite(alt?'floorWood1':'floorGray1', x*TILE, y*TILE, TILE, TILE);
@@ -637,7 +644,7 @@ function drawFloor(){
   if(currentRoom==='hq'){
     if(!hasSprites) px(2*TILE,3*TILE,20*TILE,9*TILE,'rgba(10,18,28,0.5)');
   } else {
-    const r={x:15,y:9,w:6,h:4};
+    const r={x:19,y:10,w:6,h:4};
     if(hasSprites){
       // Rug area - draw darker floor
       for(let dy=0;dy<4;dy++) for(let dx=0;dx<6;dx++)
@@ -651,19 +658,17 @@ function drawFloor(){
 }
 function drawWalls(){
   const hasSprites = tilesheetLoaded && tilesheetImg;
+  // thin top wall — a single tile row so the floor reads right up to it
   for(let x=0;x<GW;x++){
     if(hasSprites){
       drawSprite('wallSolid', x*TILE, 0, TILE, TILE);
-      drawSprite('wallSolid2', x*TILE, TILE, TILE, TILE);
-      drawSprite('wallSolid3', x*TILE, TILE+TILE-4, TILE, TILE);
     } else {
       px(x*TILE,0,TILE,TILE,C.wallTop);
-      px(x*TILE,TILE,TILE,TILE,C.wallFace);
-      px(x*TILE,TILE+TILE-3,TILE,3,shade(C.wallFace,-14));
+      px(x*TILE,TILE-3,TILE,3,shade(C.wallFace,-14));
       ctx.fillStyle='rgba(255,255,255,0.04)'; ctx.fillRect(x*TILE,0,TILE,2);
     }
   }
-  for(let y=2;y<GH;y++){
+  for(let y=1;y<GH;y++){
     if(hasSprites){
       drawSprite('wallSolid', 0, y*TILE, TILE, TILE);
       drawSprite('wallSolid', (GW-1)*TILE, y*TILE, TILE, TILE);
@@ -673,7 +678,7 @@ function drawWalls(){
     }
   }
   for(let x=1;x<GW-1;x++){
-    if(x===11||x===12) continue;
+    if(x===DOOR_X||x===DOOR_X+1) continue;
     if(hasSprites){
       drawSprite('wallSolid4', x*TILE, (GH-1)*TILE, TILE, TILE);
     } else {
@@ -681,9 +686,9 @@ function drawWalls(){
       px(x*TILE,(GH-1)*TILE,TILE,3,C.wallTop);
     }
   }
-  px(11*TILE,(GH-1)*TILE,2*TILE,TILE,'#0a0f16');
-  px(11*TILE,(GH-1)*TILE,2*TILE,3,C.cyan);
-  ctx.fillStyle='rgba(35,227,255,0.15)'; ctx.fillRect(11*TILE,(GH-1)*TILE,2*TILE,TILE);
+  px(DOOR_X*TILE,(GH-1)*TILE,2*TILE,TILE,'#0a0f16');
+  px(DOOR_X*TILE,(GH-1)*TILE,2*TILE,3,C.cyan);
+  ctx.fillStyle='rgba(35,227,255,0.15)'; ctx.fillRect(DOOR_X*TILE,(GH-1)*TILE,2*TILE,TILE);
 }
 
 /* ---------- DRAW: ROOM WALLS (HQ mode partitions) ---------- */
@@ -694,7 +699,7 @@ function drawRoomPartitions(){
 /* ---------- DRAW: KANBAN ---------- */
 function drawKanban(){
   if(currentRoom==='hq') return; // no kanban in HQ
-  const bx=10*TILE, by=2, bw=4*TILE, bh=TILE+8;
+  const bx=14*TILE, by=6*TILE, bw=4*TILE, bh=TILE+8;
   px(bx,by,bw,bh,'#0e1a26');
   ctx.strokeStyle='#2a4860'; ctx.lineWidth=1;
   ctx.strokeRect(bx+0.5,by+0.5,bw-1,bh-1);
@@ -723,7 +728,20 @@ function drawCubicleWalls(d){
 function drawCubicles(){
   // every worker desk (boss sits in the manager office on the rug — no cubicle)
   DESK_POSITIONS.forEach((d,i)=>{ if(i!==0) drawCubicleWalls(d); });
+  STATIC_DESKS.forEach(drawCubicleWalls);
 }
+
+/* ---------- DRAW: STATIC (agent-less) DESKS — fills out the open plan ---------- */
+function drawStaticDesk(d){
+  const x=d.dx*TILE, y=d.dy*TILE;
+  for(let c=0;c<d.w;c++){
+    drawSprite('deskTop', x+c*TILE, y, TILE, TILE);
+    drawSprite('deskFront', x+c*TILE, y+TILE, TILE, TILE);
+  }
+  drawDeskProps(d, {boss:false});
+  drawChair(d.dx+1, d.dy+1);   // empty chair
+}
+function drawStaticDesks(){ STATIC_DESKS.forEach(drawStaticDesk); }
 
 /* ---------- DRAW: DESKS ---------- */
 function drawDesk(agent){
@@ -738,6 +756,7 @@ function drawDesk(agent){
       drawSprite('deskFront', x+c*TILE, y+TILE, TILE, TILE);
     }
     drawDeskProps(d, agent);
+    drawChair(d.seatX, d.seatY);   // chair in front of the desk; the agent draws on top
     if(agent.boss){
       px(x, y+TILE-2, w, 2, hexA(C.cyan,0.6));
       if(Math.floor(Date.now()/800)%2===0){
@@ -782,12 +801,18 @@ function drawDesk(agent){
   }
 }
 
-/* ---------- DRAW: CHAIR ---------- */
+/* ---------- DRAW: CHAIR (pack sprite, back view) ---------- */
 function drawChair(seatX,seatY){
-  const x=seatX*TILE+TILE/2, y=seatY*TILE+TILE/2;
-  px(x-5,y-2,10,7,'#14202c');
-  px(x-5,y-7,10,5,'#1a2a38');
-  px(x-5,y-7,10,2,'#24384a');
+  const cx=seatX*TILE+TILE/2;
+  if(tilesheetLoaded && _img('obj') && SP.chairBack){
+    const s=SP.chairBack, w=s[3], h=s[4];
+    const dh=1.8*TILE, dw=dh*(w/h);
+    const baseY=seatY*TILE+TILE+4;
+    ctx.drawImage(_img('obj'), s[1]*16,s[2]*16, w*16,h*16, cx-dw/2, baseY-dh, dw, dh);
+    return;
+  }
+  const y=seatY*TILE+TILE/2;
+  px(cx-5,y-2,10,7,'#14202c'); px(cx-5,y-7,10,5,'#1a2a38'); px(cx-5,y-7,10,2,'#24384a');
 }
 
 /* ---------- DRAW: DECOR ---------- */
@@ -1088,7 +1113,7 @@ function rebuildBlocked(){
   blocked = Array.from({length:GH},()=>Array(GW).fill(false));
   for(let x=0;x<GW;x++){blocked[0][x]=true;blocked[1][x]=true;blocked[GH-1][x]=true;}
   for(let y=0;y<GH;y++){blocked[y][0]=true;blocked[y][GW-1]=true;}
-  blocked[GH-1][11]=false; blocked[GH-1][12]=false;
+  blocked[GH-1][DOOR_X]=false; blocked[GH-1][DOOR_X+1]=false;
   if(currentRoom !== 'hq'){
     // block each occupied desk's footprint (top + front), but keep the seat tile
     // walkable so the agent can reach it from below
@@ -1100,6 +1125,12 @@ function rebuildBlocked(){
         if(blocked[fy] && !(fx===d.seatX && fy===d.seatY)) blocked[fy][fx]=true;
       }
     }
+    STATIC_DESKS.forEach(d=>{
+      for(let c=0;c<d.w;c++){
+        if(blocked[d.dy]) blocked[d.dy][d.dx+c]=true;
+        if(blocked[d.dy+1]) blocked[d.dy+1][d.dx+c]=true;
+      }
+    });
   }
   DECOR.forEach(d=>{ if(blocked[d.y]&&blocked[d.y][d.x]!==undefined) blocked[d.y][d.x]=true; });
 }
@@ -1377,10 +1408,8 @@ function frame(now){
     // Room mode: desks + agents
     drawKanban();
     DECOR.forEach(drawDecor);
-    drawCubicles();   // partition walls behind the desks
-
-    // Chairs
-    DESK_POSITIONS.forEach(d=>drawChair(d.seatX,d.seatY));
+    drawCubicles();      // partition walls behind the desks
+    drawStaticDesks();   // agent-less filler cubicles (incl. their chairs)
     
     // Y-sort desks + agents
     const ents=[];
@@ -1448,6 +1477,12 @@ function rebuildWalkGrid(){
         if(!(fx===d.seatX && fy===d.seatY)) WALKABLE.delete(fx+','+fy);
       }
     }
+    STATIC_DESKS.forEach(d=>{
+      for(let c=0;c<d.w;c++){
+        WALKABLE.delete((d.dx+c)+','+d.dy);
+        WALKABLE.delete((d.dx+c)+','+(d.dy+1));
+      }
+    });
   }
   DECOR.forEach(d=> WALKABLE.delete(d.x+','+d.y));
 }
