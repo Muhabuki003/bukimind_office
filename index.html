@@ -319,12 +319,18 @@ const SP = {
   plant:['obj',15,2,2,5],
   bookshelf:['obj',16,35,3,6],
   server:['obj',24,9,3,4],
-  cooler:['obj',16,28,2,6],
-  coffee:['obj',42,36,2,2],
+  cooler:['obj',24,28,2,6],   // water-cooler jug on stand
+  coffee:['obj',16,28,2,6],   // coffee machine on cabinet
+  // -- Desk-top props (what sits ON a workstation) --
+  monitorScreen:['obj',30,24,3,4],  // blue-screen monitor + keyboard, front
+  laptop:['obj',27,24,2,3],          // open laptop, blue screen (facing left)
+  laptop2:['obj',34,24,2,3],         // open laptop (facing right)
+  papers:['obj',39,33,2,2],          // stacked papers / binder
+  deskLamp:['obj',27,36,2,3],        // articulated desk lamp
   // -- Compatibility aliases used elsewhere --
   chairBack:['obj',30,7,2,3], chairSeat:['obj',30,7,2,3],
   plant1:['obj',15,2,2,5], plant3:['obj',15,2,2,5],
-  waterCooler:['obj',16,28,2,6],
+  waterCooler:['obj',24,28,2,6],
 };
 
 // Draw a single 16px tile (tiling floors / walls / desk surfaces).
@@ -346,6 +352,32 @@ function drawObject(name, tileX, tileY){
   const dy = tileY*TILE + TILE - dh;     // sit on the tile's bottom edge
   ctx.drawImage(img, s[1]*16, s[2]*16, w*16, h*16, dx, dy, dw, dh);
   return true;
+}
+
+// Draw a desk-top prop: keeps aspect ratio, sized by height in tiles, bottom-anchored
+// at baseY and centred on centreX (both in pixels). Used for monitors/laptops/papers.
+function drawProp(name, centreX, baseY, hTiles){
+  const s = SP[name]; if(!s) return;
+  const img = _img(s[0]); if(!img) return;
+  const w = s[3]||1, h = s[4]||1;
+  const dh = hTiles*TILE, dw = dh*(w/h);
+  ctx.drawImage(img, s[1]*16, s[2]*16, w*16, h*16, centreX-dw/2, baseY-dh, dw, dh);
+}
+
+// Compose the props on a workstation so it reads like the pack's demo scene:
+// a screen sitting on the surface (rising above it) plus a small paper stack.
+function drawDeskProps(d, agent){
+  const x = d.dx*TILE, y = d.dy*TILE, w = d.w;
+  const baseY = y + TILE + 1;            // bottom edge of the desk surface
+  if(agent.boss){
+    drawProp('monitorScreen', x + 1.0*TILE,       baseY, 2.0);
+    drawProp('monitorScreen', x + (w-1.0)*TILE,   baseY, 2.0);
+    drawProp('papers',        x + (w/2)*TILE,      baseY, 1.0);
+  } else {
+    const screen = (d.dx + d.dy) % 2 ? 'laptop' : 'monitorScreen';
+    drawProp(screen,   x + w*TILE*0.5 - 2, baseY, 1.8);
+    drawProp('papers', x + w*TILE - 6,     baseY, 0.9);
+  }
 }
 let deskZoomOpen = false;
 let deskPollTimer = null;
@@ -678,6 +710,7 @@ function drawDesk(agent){
       drawSprite('deskTop', x+c*TILE, y, TILE, TILE);
       drawSprite('deskFront', x+c*TILE, y+TILE, TILE, TILE);
     }
+    drawDeskProps(d, agent);
     if(agent.boss){
       px(x, y+TILE-2, w, 2, hexA(C.cyan,0.6));
       if(Math.floor(Date.now()/800)%2===0){
