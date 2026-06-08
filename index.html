@@ -370,13 +370,13 @@ function drawDeskProps(d, agent){
   const x = d.dx*TILE, y = d.dy*TILE, w = d.w;
   const baseY = y + TILE + 1;            // bottom edge of the desk surface
   if(agent.boss){
-    drawProp('monitorScreen', x + 1.0*TILE,       baseY, 2.0);
-    drawProp('monitorScreen', x + (w-1.0)*TILE,   baseY, 2.0);
-    drawProp('papers',        x + (w/2)*TILE,      baseY, 1.0);
+    drawProp('monitorScreen', x + 1.1*TILE,      baseY, 1.5);
+    drawProp('monitorScreen', x + (w-1.1)*TILE,  baseY, 1.5);
+    drawProp('papers',        x + (w/2)*TILE,    baseY, 0.85);
   } else {
-    const screen = (d.dx + d.dy) % 2 ? 'laptop' : 'monitorScreen';
-    drawProp(screen,   x + w*TILE*0.5 - 2, baseY, 1.8);
-    drawProp('papers', x + w*TILE - 6,     baseY, 0.9);
+    // forward-facing monitor centred on the desk + a small paper stack
+    drawProp('monitorScreen', x + w*TILE*0.42, baseY, 1.35);
+    drawProp('papers',        x + w*TILE*0.80, baseY, 0.8);
   }
 }
 let deskZoomOpen = false;
@@ -491,21 +491,23 @@ let roomMetrics = {};          // metrics keyed by room id
 let hqChildren = [];          // rooms under hq
 let roomColors = ['#23e3ff','#3b82f6','#a855f7','#f5a623','#22e07a','#ff5d6c'];
 
-/* ===== DESK POSITIONS (6 slots, indexed) ===== */
+/* ===== DESK POSITIONS (6 slots, indexed) — open-plan cubicle pods =====
+   Two tight rows of cubicles on the left/centre, manager office on the right,
+   mirroring the pack developer's demo scene. */
 const DESK_POSITIONS = [
-  { dx:9, dy:10, w:4, seatX:10, seatY:11, big:true },   // boss
-  { dx:2,  dy:3, w:2, seatX:2,  seatY:4 },
-  { dx:7,  dy:3, w:2, seatX:7,  seatY:4 },
-  { dx:13, dy:3, w:2, seatX:13, seatY:4 },
-  { dx:18, dy:3, w:2, seatX:18, seatY:4 },
-  { dx:2,  dy:8, w:2, seatX:2,  seatY:9 },
+  { dx:16, dy:9, w:4, seatX:18, seatY:10, big:true },   // boss / manager office (on rug)
+  { dx:2,  dy:3, w:3, seatX:3,  seatY:4 },   // cubicle row 1 — a
+  { dx:6,  dy:3, w:3, seatX:7,  seatY:4 },   // row 1 — b
+  { dx:10, dy:3, w:3, seatX:11, seatY:4 },   // row 1 — c
+  { dx:2,  dy:8, w:3, seatX:3,  seatY:9 },   // cubicle row 2 — a
+  { dx:6,  dy:8, w:3, seatX:7,  seatY:9 },   // row 2 — b
 ];
 
-/* decor: type + tile pos */
+/* decor: type + tile pos — pushed to the perimeter like the demo */
 const DECOR = [
-  {t:'plant', x:1, y:13},{t:'plant', x:21, y:13},{t:'plant', x:21, y:2},
-  {t:'cooler', x:1, y:2},{t:'coffee', x:21, y:8},{t:'server', x:21, y:11},
-  {t:'bookshelf', x:18, y:8},
+  {t:'coffee', x:1, y:1},{t:'bookshelf', x:11, y:1},{t:'server', x:20, y:1},
+  {t:'cooler', x:1, y:6},{t:'plant', x:22, y:5},
+  {t:'plant', x:1, y:13},{t:'plant', x:22, y:13},
 ];
 
 /* ---------- BUILD BLOCKED GRID ---------- */
@@ -629,7 +631,7 @@ function drawFloor(){
   if(currentRoom==='hq'){
     if(!hasSprites) px(2*TILE,3*TILE,20*TILE,9*TILE,'rgba(10,18,28,0.5)');
   } else {
-    const r={x:8,y:9,w:6,h:4};
+    const r={x:15,y:9,w:6,h:4};
     if(hasSprites){
       // Rug area - draw darker floor
       for(let dy=0;dy<4;dy++) for(let dx=0;dx<6;dx++)
@@ -696,6 +698,25 @@ function drawKanban(){
       px(bx+6+c*(bw/3-2)+r*2, by+5+r*8, 6,5, cols[c]);
     }
   }
+}
+
+/* ---------- DRAW: CUBICLE PARTITIONS ----------
+   Light-grey back panel the monitor sits against + dark frame posts on each
+   side, matching the pack's cubicle pods. Purely visual (not in the blocked
+   grid) so agent pathfinding is unaffected. Drawn before the desks. */
+function drawCubicleWalls(d){
+  const x = d.dx*TILE, y = d.dy*TILE, w = d.w*TILE;
+  const by = y - 7, bh = 10;                 // back panel behind the desk surface
+  px(x-2, by,        w+4, bh, '#b3b7bf');
+  px(x-2, by,        w+4, 2,  '#cfd3db');     // top highlight
+  px(x-2, by+bh-1,   w+4, 1,  '#7c808a');     // bottom shadow
+  const py0 = y - 9, ph = TILE + 9;          // dark frame posts on left & right
+  px(x-3, py0, 3, ph, '#262c39'); px(x-3, py0, 1, ph, '#3a4250');
+  px(x+w,  py0, 3, ph, '#262c39'); px(x+w,  py0, 1, ph, '#3a4250');
+}
+function drawCubicles(){
+  // every worker desk (boss sits in the manager office on the rug — no cubicle)
+  DESK_POSITIONS.forEach((d,i)=>{ if(i!==0) drawCubicleWalls(d); });
 }
 
 /* ---------- DRAW: DESKS ---------- */
@@ -1336,7 +1357,8 @@ function frame(now){
     // Room mode: desks + agents
     drawKanban();
     DECOR.forEach(drawDecor);
-    
+    drawCubicles();   // partition walls behind the desks
+
     // Chairs
     DESK_POSITIONS.forEach(d=>drawChair(d.seatX,d.seatY));
     
