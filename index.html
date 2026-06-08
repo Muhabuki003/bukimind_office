@@ -274,59 +274,78 @@ header{flex-shrink:0;padding:8px 14px;background:rgba(10,18,28,.92);border-botto
 const OFFICE_BACKEND = 'https://office.bookistudios.com/api/office';
 const DESK_BOSS_URL = OFFICE_BACKEND;
 
-/* ===== MODERN OFFICE SPRITE SYSTEM ===== */
-// Load tilesheet from external PNG (the pixel furniture sheet shipped in this repo)
-const TILESHEET_URL = 'spritesheet.png';
-
-let tilesheetImg = null;
+/* ===== MODERN OFFICE SPRITE SYSTEM — downloaded pixel furniture pack =====
+   Three 16x16 sheets ship in this repo:
+     tileset_floors.png  — tiling floor textures (8 bands, each repeats)
+     tileset_walls.png   — wall blocks + face textures
+     tileset_objects.png — desks, chairs, plants, monitors, decor
+   Coordinates below were derived from a per-tile pixel analysis of the pack. */
+const SHEETS = {
+  obj:   { url:'tileset_objects.png', img:null, ok:false },
+  floor: { url:'tileset_floors.png',  img:null, ok:false },
+  wall:  { url:'tileset_walls.png',   img:null, ok:false },
+};
+let tilesheetImg = null;     // legacy gate the render code checks
 let tilesheetLoaded = false;
-(function loadTileSheet(){
+function _sheetsReady(){ return SHEETS.obj.ok && SHEETS.floor.ok && SHEETS.wall.ok; }
+Object.values(SHEETS).forEach(s=>{
   const img = new Image();
-  const ctx = document.createElement('canvas').getContext('2d');
   img.onload = function(){
-    tilesheetImg = this;
-    tilesheetLoaded = true;
-    console.log('Tilesheet loaded: '+this.width+'x'+this.height);
+    s.img = this; s.ok = true;
+    if(_sheetsReady()){
+      tilesheetImg = SHEETS.obj.img; tilesheetLoaded = true;
+      console.log('Furniture pack loaded (objects/floors/walls)');
+    }
   };
-  img.src = TILESHEET_URL;
-})();
+  img.src = s.url;
+});
+function _img(sheet){ const s = SHEETS[sheet]; return (s && s.ok) ? s.img : null; }
 
-// Sprite coords: [col, row] in the 16x16 tilesheet (256x848 = 16 cols x 53 rows)
-// Mapped from actual pixel analysis
-const T = {
-  // -- Floor --
-  floorWood1: [0,0], floorWood2: [1,0], floorWood3: [2,0],
-  floorWood4: [3,0], floorWood5: [4,0], floorWood6: [5,0],
-  floorWood7: [6,0], floorWood8: [7,0], floorWood9: [8,0], floorWood10: [9,0],
-  floorGray1: [10,0], floorGray2: [11,0], floorGray3: [12,0], floorGray4: [13,0],
-  floorPattern: [10,1],
-  floorAlt: [11,1],
-  // Dark floor variants  
-  floorDark: [15,0], floorDark2: [15,2],
-  // -- Walls (row 27: solid wall blocks) --
-  wallSolid: [0,27], wallSolid2: [1,27], wallSolid3: [2,27],
-  wallSolid4: [3,27], wallSolid5: [4,27], wallSolid6: [5,27],
-  // -- Desks (row 34-35: warm wood desks) --
-  deskTop: [0,34], deskTop2: [1,34],
-  deskFront: [2,35], deskFront2: [3,35],
-  deskSide: [4,34],
-  // -- Chairs (row 10-11: red cushions) --
-  chairBack: [10,10], chairSeat: [11,10],
-  // -- Monitors (row 8-9: blue screens) --
-  monitor: [8,8], monitor2: [9,8],
-  // -- Plants (row 47-50: green) --
-  plant1: [12,47], plant2: [13,47],
-  plant3: [12,48], plant4: [13,48],
-  // -- Decor --
-  bookshelf: [7,6], server: [6,6],
-  waterCooler: [5,6],
+// name -> [sheet, col, row, wTiles, hTiles]  (w,h default 1, in 16px units)
+const SP = {
+  // -- Floors (each band of tileset_floors.png is a repeating texture) --
+  floorWood1:['floor',20,3], floorGray1:['floor',38,3], floorDark:['floor',44,3],
+  floorWood2:['floor',20,3], floorGray2:['floor',38,3], floorDark2:['floor',44,3],
+  floorPattern:['floor',2,3], floorAlt:['floor',8,3],
+  // -- Walls (navy solid body from tileset_walls.png) --
+  wallSolid:['wall',1,5], wallSolid2:['wall',1,5], wallSolid3:['wall',1,5],
+  wallSolid4:['wall',1,5], wallSolid5:['wall',1,5], wallSolid6:['wall',1,5],
+  // -- Desk: warm wood surface + front rail (tileset_objects.png) --
+  deskTop:['obj',5,4], deskTop2:['obj',5,4], deskSide:['obj',5,4],
+  deskFront:['obj',6,8], deskFront2:['obj',6,8],
+  // -- Monitors / computer (blue screen) --
+  monitor:['obj',42,36,2,2], monitor2:['obj',44,36,2,2],
+  // -- Multi-tile decor objects [sheet,col,row,w,h] --
+  plant:['obj',15,2,2,5],
+  bookshelf:['obj',16,35,3,6],
+  server:['obj',24,9,3,4],
+  cooler:['obj',16,28,2,6],
+  coffee:['obj',42,36,2,2],
+  // -- Compatibility aliases used elsewhere --
+  chairBack:['obj',30,7,2,3], chairSeat:['obj',30,7,2,3],
+  plant1:['obj',15,2,2,5], plant3:['obj',15,2,2,5],
+  waterCooler:['obj',16,28,2,6],
 };
 
+// Draw a single 16px tile (tiling floors / walls / desk surfaces).
 function drawSprite(name, x, y, w, h){
-  const s = T[name];
-  if(!s || !tilesheetLoaded || !tilesheetImg) return;
-  const [col, row] = s;
-  ctx.drawImage(tilesheetImg, col*16, row*16, 16, 16, x, y, w||16, h||16);
+  const s = SP[name]; if(!s) return;
+  const img = _img(s[0]); if(!img) return;
+  ctx.drawImage(img, s[1]*16, s[2]*16, 16, 16, x, y, w||16, h||16);
+}
+
+// Draw a whole multi-tile furniture object, scaled to fit and bottom-anchored on the tile.
+function drawObject(name, tileX, tileY){
+  const s = SP[name]; if(!s) return false;
+  const img = _img(s[0]); if(!img) return false;
+  const w = s[3]||1, h = s[4]||1;
+  let dw = w*TILE, dh = h*TILE;
+  const sc = Math.min((1.7*TILE)/dw, (2.6*TILE)/dh);  // keep aspect, cap footprint
+  dw *= sc; dh *= sc;
+  const dx = tileX*TILE + (TILE-dw)/2;   // centre horizontally on the tile
+  const dy = tileY*TILE + TILE - dh;     // sit on the tile's bottom edge
+  ctx.drawImage(img, s[1]*16, s[2]*16, w*16, h*16, dx, dy, dw, dh);
+  return true;
 }
 let deskZoomOpen = false;
 let deskPollTimer = null;
@@ -715,12 +734,11 @@ function drawChair(seatX,seatY){
 function drawDecor(d){
   const hasSprites = tilesheetLoaded && tilesheetImg;
   if(hasSprites){
-    const x=d.x*TILE, y=d.y*TILE;
-    if(d.t==='plant'){ drawSprite('plant1',x,y,TILE,TILE); drawSprite('plant3',x,y+TILE/2,TILE,TILE); }
-    else if(d.t==='cooler'){ drawSprite('waterCooler',x,y,TILE,TILE); }
-    else if(d.t==='coffee'){ drawSprite('monitor',x,y,TILE,TILE); }
-    else if(d.t==='server'){ drawSprite('server',x,y,TILE,TILE); }
-    else if(d.t==='bookshelf'){ drawSprite('bookshelf',x,y,TILE,TILE); }
+    if(d.t==='plant'){ drawObject('plant',d.x,d.y); }
+    else if(d.t==='cooler'){ drawObject('cooler',d.x,d.y); }
+    else if(d.t==='coffee'){ drawObject('coffee',d.x,d.y); }
+    else if(d.t==='server'){ drawObject('server',d.x,d.y); }
+    else if(d.t==='bookshelf'){ drawObject('bookshelf',d.x,d.y); }
     return;
   }
   if(currentRoom!=='hq'){
