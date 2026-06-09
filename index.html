@@ -1848,7 +1848,6 @@ async function pollHermes(){
 /* ---------- WEB SOCKET CLIENT (Live Updates) ---------- */
 let wsReconnectDelay = 1; // seconds, doubles on each failure
 let wsAttempts = 0;
-let ws = null;
 
 function connectWS(){
   if(ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
