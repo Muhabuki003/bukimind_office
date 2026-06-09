@@ -1965,9 +1965,19 @@ setTimeout(connectWS, 2000);
 /* ---------- BOOT ---------- */
 rebuildWalkGrid();
 setupCustomAgentsRoom();
-connectWebSocket();
 log('SYSTEM','Connecting to Hermes feed…',C.cyan);
-pollHermes();
+
+// Fetch initial status sync, then start auto-switching
+pollHermes().then(() => {
+  // If still in HQ after first poll, switch to first room with agents
+  if(currentRoom === 'hq' && hqChildren.length > 0){
+    const target = hqChildren[0];
+    if(roomData[target] && roomData[target].agents && roomData[target].agents.length > 0){
+      switchRoom(target);
+    }
+  }
+});
+
 setInterval(pollHermes, 5000);
 
 renderRoomBar();
