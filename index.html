@@ -164,6 +164,50 @@ header{flex-shrink:0;padding:8px 14px;background:rgba(10,18,28,.92);border-botto
   #agent-bar{top:48px;left:140px}
   #zone-label{left:148px}
 }
+/* AGENT SUB-TABS */
+.asub-tab.active{color:var(--cyan) !important;background:rgba(35,227,255,.08);box-shadow:inset 0 -2px 0 var(--cyan)}
+.asub-panel{display:none}
+.asub-panel.active{display:block;animation:fade .12s}
+/* ACTIVITY TIMELINE ITEMS */
+.aact-item{display:flex;gap:5px;padding:4px 4px;border-bottom:1px solid rgba(21,41,60,.4);font-size:8px;line-height:1.4}
+.aact-item:last-child{border:none}
+.aact-ts{color:var(--text3);flex-shrink:0;font-size:7px;padding-top:1px}
+.aact-desc{color:var(--text2)}
+.aact-room{color:var(--text3);font-size:7px;flex-shrink:0;margin-left:auto}
+/* MOBILE RESPONSIVE */
+@media(max-width:768px){
+  #agent-bar{position:fixed;top:auto;bottom:0;left:0;right:0;z-index:100;background:rgba(10,18,28,.95);border-top:1px solid var(--border2);padding:6px 8px 8px;overflow-x:auto;display:flex;gap:4px;transform:translateY(100%);transition:transform .25s ease}
+  #agent-bar.open{display:flex !important;transform:translateY(0)}
+  #agent-bar.hidden{display:none !important}
+  #agent-bar:not(.hidden):not(.open){display:flex;transform:translateY(calc(100% - 22px))}
+  #agent-bar:not(.hidden):not(.open)::after{content:'⬆ AGENTS';position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:6px;color:var(--text3);letter-spacing:1px;font-family:var(--pixel);background:rgba(10,18,28,.9);padding:2px 8px;border-radius:4px 4px 0 0;border:1px solid var(--border2);border-bottom:none;cursor:pointer}
+  .agent-chip{padding:4px 6px}
+  .chip-name{font-size:7px}
+  .chip-status{font-size:5px}
+  #console{max-height:45vh}
+  .ctab{font-size:7px;padding:5px 3px}
+  .console-body{padding:5px 8px}
+  #room-sidebar{padding:4px 6px}
+  .room-tab{padding:4px 6px}
+  .room-tab .rt-name{font-size:7px}
+  .room-tab .rt-work{font-size:6px}
+  header{padding:5px 8px}
+  .brand-name{font-size:8px}
+  .brand-sub{font-size:6px}
+  .hud-pill{font-size:7px}
+  #clock{font-size:8px}
+  #agent-bar:not(.hidden){display:flex;transform:translateY(calc(100% - 22px));transition:transform .25s}
+}
+@media(max-width:480px){
+  .brand-name{font-size:7px}
+  .brand-sub{font-size:5px}
+  .brand-mark{width:18px;height:18px}
+  #clock{font-size:7px}
+  .hud-pill{font-size:6px}
+  .ctab{font-size:6px;padding:4px 2px}
+  .log-line{font-size:8px}
+  .log-t{font-size:7px}
+}
 </style>
 </head>
 <body>
@@ -197,14 +241,73 @@ header{flex-shrink:0;padding:8px 14px;background:rgba(10,18,28,.92);border-botto
   <div id="console">
     <div class="console-tabs">
       <div class="ctab active" data-tab="log">Activity</div>
-      <div class="ctab" data-tab="insp">Inspect</div>
+      <div class="ctab" data-tab="insp">Agent</div>
       <div class="ctab" data-tab="met">System</div>
       <div class="ctab" data-tab="trig">Trigger</div>
-      <div class="ctab" data-tab="peek">Peek</div>
     </div>
     <div class="console-body">
       <div class="cpanel active" id="p-log"></div>
-      <div class="cpanel" id="p-insp"><div id="insp-empty">Tap an agent to inspect →</div></div>
+      <div class="cpanel" id="p-insp">
+        <!-- Agent Detail Panel — replaces old Inspect + Peek -->
+        <div id="agent-detail-empty" style="text-align:center;padding:16px;color:var(--text3);font-size:10px">Tap an agent to inspect →</div>
+        <div id="agent-detail" style="display:none;height:100%;display:none;flex-direction:column">
+          <!-- Header -->
+          <div style="display:flex;align-items:center;gap:8px;padding:4px 0 8px;border-bottom:1px solid var(--border);flex-shrink:0">
+            <div id="agent-det-av" style="width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--pixel);font-size:11px;flex-shrink:0;background:rgba(35,227,255,.1);color:var(--cyan)">⬡</div>
+            <div style="flex:1;min-width:0">
+              <div id="agent-det-name" style="font-size:10px;color:var(--text);letter-spacing:.5px">Agent</div>
+              <div id="agent-det-role" style="font-size:7px;color:var(--text2);letter-spacing:1px;margin-top:1px">Role</div>
+            </div>
+            <div id="agent-det-room" style="font-size:7px;color:var(--text3);flex-shrink:0">—</div>
+          </div>
+          <!-- Sub-tabs -->
+          <div style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0;margin-top:6px">
+            <div class="asub-tab active" data-sub="stat" onclick="switchAgentSub('stat')" style="flex:1;padding:5px;text-align:center;font-size:7px;letter-spacing:1px;color:var(--text2);cursor:pointer;border-right:1px solid var(--border);transition:all .12s;text-transform:uppercase">Status</div>
+            <div class="asub-tab" data-sub="act" onclick="switchAgentSub('act')" style="flex:1;padding:5px;text-align:center;font-size:7px;letter-spacing:1px;color:var(--text2);cursor:pointer;border-right:1px solid var(--border);transition:all .12s;text-transform:uppercase">Activity</div>
+            <div class="asub-tab" data-sub="pik" onclick="switchAgentSub('pik')" style="flex:1;padding:5px;text-align:center;font-size:7px;letter-spacing:1px;color:var(--text2);cursor:pointer;transition:all .12s;text-transform:uppercase">Peek</div>
+          </div>
+          <!-- Sub-tab bodies -->
+          <div style="flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border2) transparent;min-height:0">
+            <!-- Status sub-tab -->
+            <div class="asub-panel active" id="asub-stat" style="padding:8px 4px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+                <div style="background:rgba(35,227,255,.04);border:1px solid var(--border);border-radius:5px;padding:6px">
+                  <div style="font-size:7px;color:var(--text3);letter-spacing:1px;text-transform:uppercase">Status</div>
+                  <div id="astat-led" style="font-size:11px;color:var(--cyan);margin-top:2px;font-weight:700;display:flex;align-items:center;gap:5px"><span id="astat-led-dot" style="width:6px;height:6px;border-radius:2px;display:inline-block;background:var(--text3)"></span><span id="astat-led-label">—</span></div>
+                </div>
+                <div style="background:rgba(35,227,255,.04);border:1px solid var(--border);border-radius:5px;padding:6px">
+                  <div style="font-size:7px;color:var(--text3);letter-spacing:1px;text-transform:uppercase">Room</div>
+                  <div id="astat-room" style="font-size:11px;color:var(--cyan);margin-top:2px;font-weight:700">—</div>
+                </div>
+              </div>
+              <div style="font-size:7px;color:var(--text3);letter-spacing:1px;margin-bottom:4px">CURRENT TASK</div>
+              <div id="astat-task" style="font-size:9px;color:var(--text);margin-bottom:8px;line-height:1.4">—</div>
+              <div style="font-size:7px;color:var(--text3);letter-spacing:1px;margin-bottom:4px">LIVE OUTPUT</div>
+              <div id="astat-out" style="background:#060c12;border:1px solid var(--border);border-radius:5px;padding:6px;font-size:8px;line-height:1.5;white-space:pre-wrap;color:var(--text2);max-height:80px;overflow-y:auto">—</div>
+            </div>
+            <!-- Activity sub-tab -->
+            <div class="asub-panel" id="asub-act" style="padding:4px 0;display:none">
+              <div id="aact-timeline"></div>
+              <div id="aact-empty" style="display:none;text-align:center;padding:20px 8px;color:var(--text3);font-size:8px">No recent activity recorded</div>
+            </div>
+            <!-- Peek sub-tab -->
+            <div class="asub-panel" id="asub-pik" style="padding:6px 4px;display:none">
+              <div style="border:1px solid var(--border2);border-radius:5px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:rgba(35,227,255,.05);border-bottom:1px solid var(--border2);font-size:8px;color:var(--text2);letter-spacing:.5px">
+                  <span id="apeek-status-dot" style="width:5px;height:5px;border-radius:50%;flex-shrink:0;background:var(--green)"></span>
+                  <span id="apeek-status-label">Working</span>
+                  <span style="margin-left:auto;font-size:7px;color:var(--text3)" id="apeek-since">—</span>
+                </div>
+                <div style="padding:7px 8px;font-size:8px;line-height:1.5;color:var(--text2)">
+                  <span class="peek-action" id="apeek-action">Standing by</span>
+                  <span class="peek-file" id="apeek-file" style="color:var(--cyan);font-weight:700">—</span>
+                  <div id="apeek-code" style="background:#060c12;border:1px solid var(--border);border-radius:3px;padding:6px;margin-top:4px;font-size:7px;line-height:1.4;white-space:pre-wrap;overflow-x:auto;color:var(--green);font-family:var(--mono);max-height:80px;overflow-y:auto">Waiting for activity...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="cpanel" id="p-met">
         <div class="met-grid">
           <div class="met"><div class="met-v" id="m-tasks">0</div><div class="met-l">TASKS</div></div>
@@ -219,36 +322,6 @@ header{flex-shrink:0;padding:8px 14px;background:rgba(10,18,28,.92);border-botto
         <button class="trig" onclick="window.bukimind.trigger('bookistudio')"><span class="trig-ic">▶</span> Check BookiStudio pipeline</button>
         <button class="trig" onclick="window.bukimind.trigger('hq')"><span class="trig-ic">▶</span> Return to HQ</button>
         <button class="trig" onclick="openDeskZoom()"><span class="trig-ic">🗄️</span> View Boss Desk</button>
-      </div>
-      <div class="cpanel" id="p-peek">
-        <div class="peek-head" id="peek-head">
-          <div class="peek-av" id="peek-av" style="background:rgba(35,227,255,.1);color:var(--cyan)">⌘</div>
-          <div><div class="peek-name" id="peek-name">Select an agent</div><div class="peek-role" id="peek-role">Tap an agent to peek into their work</div></div>
-          <div class="peek-room" id="peek-room"></div>
-        </div>
-        <div class="peek-body" id="peek-body">
-          <div class="peek-empty" id="peek-empty">
-            <span style="font-size:18px">🔍</span>
-            <span>Tap an agent to see what they're working on</span>
-            <span style="font-size:7px;color:var(--text3)">Live activity, files being edited, code being written</span>
-          </div>
-          <div id="peek-content" style="display:none">
-            <div class="peek-card" id="peek-current-card">
-              <div class="peek-card-h">
-                <span class="pch-status" id="peek-status-dot" style="background:var(--green)"></span>
-                <span id="peek-status-label">Working</span>
-                <span style="margin-left:auto;font-size:7px;color:var(--text3)" id="peek-since">—</span>
-              </div>
-              <div class="peek-card-body" id="peek-card-body">
-                <span class="peek-action" id="peek-action">Working on</span>
-                <span class="peek-file" id="peek-file">—</span>
-                <div class="peek-code" id="peek-code">—</div>
-              </div>
-            </div>
-            <div style="margin-top:8px;font-size:7px;color:var(--text3);letter-spacing:1px;padding:0 2px 4px">RECENT ACTIVITY</div>
-            <div class="peek-stream" id="peek-stream"></div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -453,9 +526,12 @@ async function loadDeskItems(){
           const a = document.createElement('a');
           a.href = url; a.download = item.title; a.click();
         } else {
-          // Status feed items: file is only on the local machine
+          // Status feed items: download from GitHub
           const fname = item.file || item.title || 'file';
-          window.bukimind.log('DESK', 'File: "' + (item.title||'unknown') + '" is on your Mac at ~/.hermes/boss-desk/items/' + fname, '#23e3ff');
+          const ghUrl = 'https://raw.githubusercontent.com/Muhabuki003/bukimind_office/main/boss-desk/' + fname;
+          const a = document.createElement('a');
+          a.href = ghUrl; a.download = item.title; a.click();
+          window.bukimind.log('DESK', '📥 Downloaded: ' + item.title, '#23e3ff');
         }
       };
       wrap.appendChild(card);
@@ -1107,6 +1183,12 @@ function switchRoom(roomId){
   
   // Log room switch
   log('SYSTEM', isHq ? 'Returned to HQ' : `Entered ${roomData[roomId]?.name||roomId}`, C.cyan);
+  
+  // Update global feed and log render when switching to HQ
+  if(isHq){
+    updateGlobalFeed();
+    renderLogFeed();
+  }
 }
 
 function rebuildBlocked(){
@@ -1162,33 +1244,94 @@ function renderChips(){
   if(currentRoom==='hq'){ bar.innerHTML=''; return; }
   bar.innerHTML=activeAgents.map(a=>{
     const sc=a.status==='working'?(a.color||C.cyan):a.status==='done'?C.green:'#5d7d96';
-    return `<div class="agent-chip ${a.boss?'boss':''}" onclick="window.bukimind.inspect('${a.id}');window.bukimind.openPeek('${a.id}')">
+    return `<div class="agent-chip ${a.boss?'boss':''}" onclick="window.bukimind.showAgent('${a.id}')">
       <div class="chip-led" style="background:${sc};box-shadow:0 0 6px ${sc}"></div>
       <div><div class="chip-name">${a.name}</div><div class="chip-status" style="color:${sc}">${a.status.toUpperCase()}</div></div>
     </div>`;
   }).join('');
 }
 
-/* ---------- INSPECTOR ---------- */
-let currentInspect=null;
-function inspect(id){
+/* ---------- AGENT DETAIL PANEL (replaces old Inspect + Peek) ---------- */
+let currentAgentId=null;
+
+function switchAgentSub(sub){
+  document.querySelectorAll('.asub-tab').forEach(t=>t.classList.toggle('active',t.dataset.sub===sub));
+  document.querySelectorAll('.asub-panel').forEach(p=>p.classList.toggle('active',p.id==='asub-'+sub));
+}
+
+function showAgent(id){
   const a=activeById[id];
   if(!a) return;
-  currentInspect=id;
-  const el=document.getElementById('p-insp');
-  el.innerHTML=`
-    <div class="insp-head">
-      <div class="insp-av" style="background:${hexA(a.color||C.cyan,0.15)};color:${a.color||C.cyan}">${a.glyph}</div>
-      <div><div class="insp-title">${a.name} Agent</div><div class="insp-role">${a.role||'Agent'} // ${a.status.toUpperCase()}</div></div>
-    </div>
-    <div class="insp-meta">
-      <div class="insp-stat"><div class="insp-stat-l">Room</div><div class="insp-stat-v">${a.project||'—'}</div></div>
-      <div class="insp-stat"><div class="insp-stat-l">Status</div><div class="insp-stat-v" style="color:${a.status==='idle'?'#5d7d96':(a.color||C.cyan)}">${a.status}</div></div>
-    </div>
-    <div style="font-size:8px;color:var(--text3);letter-spacing:1px;margin-bottom:5px">CURRENT TASK</div>
-    <div style="font-size:10px;color:var(--text);margin-bottom:10px">${a.task}</div>
-    <div style="font-size:8px;color:var(--text3);letter-spacing:1px;margin-bottom:5px">LIVE OUTPUT</div>
-    <div class="insp-out">${a.output}</div>`;
+  currentAgentId=id;
+
+  // Show agent detail panel, hide empty state
+  document.getElementById('agent-detail-empty').style.display='none';
+  const detail=document.getElementById('agent-detail');
+  detail.style.display='flex';
+
+  // Populate header
+  const col=a.color||C.cyan;
+  document.getElementById('agent-det-av').style.background=`rgba(${hexToRgb(col)},.15)`;
+  document.getElementById('agent-det-av').style.color=col;
+  document.getElementById('agent-det-av').textContent=a.glyph||'⬡';
+  document.getElementById('agent-det-name').textContent=a.name||a.id;
+  document.getElementById('agent-det-role').textContent=(a.role||'Agent')+' // '+(a.status||'idle').toUpperCase();
+  document.getElementById('agent-det-room').textContent=a.project||'—';
+
+  // === Status sub-tab ===
+  const sc=a.status==='working'?col:a.status==='done'?C.green:'#5d7d96';
+  document.getElementById('astat-led-dot').style.background=sc;
+  document.getElementById('astat-led-dot').style.boxShadow=`0 0 6px ${sc}`;
+  document.getElementById('astat-led-label').textContent=(a.status||'idle').toUpperCase();
+  document.getElementById('astat-room').textContent=a.project||'—';
+  document.getElementById('astat-task').textContent=a.task||'Standing by';
+  document.getElementById('astat-out').textContent=a.output||'No output yet';
+
+  // === Activity sub-tab ===
+  renderAgentActivity(a);
+
+  // === Peek sub-tab ===
+  const act = a.activity || a.status || 'idle';
+  const actColor = act==='working'?'var(--green)':act==='idle'?'var(--text3)':'var(--amber)';
+  document.getElementById('apeek-status-dot').style.background=actColor;
+  document.getElementById('apeek-status-label').textContent=act==='working'?'Working':act==='idle'?'Idle':act.charAt(0).toUpperCase()+act.slice(1);
+  document.getElementById('apeek-action').textContent=a.action||'Standing by';
+  document.getElementById('apeek-file').textContent=a.currentFile||'—';
+  document.getElementById('apeek-code').textContent=a.snippet||'Waiting for activity...';
+  document.getElementById('apeek-since').textContent=a.lastActive||'—';
+
+  // Reset to Status sub-tab
+  switchAgentSub('stat');
+
+  // Switch to Agent tab
+  switchTab('insp');
+}
+
+function renderAgentActivity(a){
+  const timeline=document.getElementById('aact-timeline');
+  const empty=document.getElementById('aact-empty');
+  const recent=a.recentActivity||a.activityLog||[];
+  timeline.innerHTML='';
+  if(recent.length===0){
+    empty.style.display='block';
+  } else {
+    empty.style.display='none';
+    recent.slice(-30).reverse().forEach(item=>{
+      const ts=item.ts||'';
+      const desc=item.desc||(item.file?`Edited ${item.file}`:'Activity');
+      const file=item.file?' ('+item.file+')':'';
+      const div=document.createElement('div');
+      div.className='aact-item';
+      div.innerHTML=`<span class="aact-ts">${ts}</span><span class="aact-desc">${escapeHtml(desc)}${file?` <span style="color:var(--cyan);font-size:7px">${escapeHtml(file)}</span>`:''}</span>`;
+      timeline.appendChild(div);
+    });
+  }
+}
+
+// Clean up old openPeek/renderPeek — they're now part of showAgent
+function openPeek(agentId, roomId){
+  // Legacy stub — redirect to showAgent
+  showAgent(agentId);
 }
 
 /* ---------- ACTIVITY LOG ---------- */
@@ -1198,8 +1341,7 @@ function log(agent,msg,color){
   const t=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
   logs.unshift({t,agent,msg,color:color||'#5d7d96'});
   if(logs.length>60)logs.pop();
-  const el=document.getElementById('p-log');
-  el.innerHTML=logs.map(l=>`<div class="log-line"><span class="log-t">${l.t}</span><span class="log-agent" style="color:${l.color}">${l.agent}</span><span class="log-msg">${l.msg}</span></div>`).join('');
+  renderLogFeed();
 }
 
 /* ---------- TABS ---------- */
@@ -1209,72 +1351,10 @@ function switchTab(name){
 }
 document.querySelectorAll('.ctab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
 
-/* ---------- PEEK — Live agent work view ---------- */
-let peekTarget = null; // { agent_id, room_id, name, glyph, color }
-
-function openPeek(agentId, roomId){
-  const rid = roomId || currentRoom;
-  const room = roomData[rid];
-  if(!room) return;
-  const def = (room.agents||[]).find(a=>a.id===agentId);
-  if(!def) return;
-
-  const glyphs = ['⬡','◈','◎','◆','◉','◇','○','□','△','☆'];
-  const idx = (room.agents||[]).indexOf(def);
-  const roomColors = ['#23e3ff','#3b82f6','#a855f7','#f5a623','#22e07a','#ff5d6c'];
-  const color = roomColors[idx % roomColors.length];
-  const glyph = glyphs[idx] || '●';
-
-  peekTarget = { agent_id: agentId, room_id: rid, name: def.name || agentId, glyph, color };
-
-  document.getElementById('peek-av').style.background = `rgba(${hexToRgb(color)},.15)`;
-  document.getElementById('peek-av').style.color = color;
-  document.getElementById('peek-av').textContent = glyph;
-  document.getElementById('peek-name').textContent = def.name || agentId;
-  document.getElementById('peek-role').textContent = def.task || 'Agent';
-  document.getElementById('peek-room').textContent = room.name || roomId;
-
-  // Load agent activity
-  renderPeek(def, room);
-
-  switchTab('peek');
-}
-
-function renderPeek(def, room){
-  const activity = def.activity || def.state || 'idle';
-  const statusColor = activity === 'working' ? 'var(--green)' : activity === 'idle' ? 'var(--text3)' : 'var(--amber)';
-  const statusLabel = activity === 'working' ? 'Working' : activity === 'idle' ? 'Idle' : activity.charAt(0).toUpperCase() + activity.slice(1);
-
-  document.getElementById('peek-status-dot').style.background = statusColor;
-  document.getElementById('peek-status-label').textContent = statusLabel;
-
-  const currentFile = def.currentFile || '—';
-  const action = def.action || 'Standing by';
-  const snippet = def.snippet || 'Waiting for activity...';
-  const since = def.lastActive || '—';
-
-  document.getElementById('peek-action').textContent = action;
-  document.getElementById('peek-file').textContent = currentFile;
-  document.getElementById('peek-code').textContent = snippet;
-  document.getElementById('peek-since').textContent = since;
-
-  // Recent activity stream
-  const stream = document.getElementById('peek-stream');
-  stream.innerHTML = '';
-  const recent = def.recentActivity || [];
-  if(recent.length === 0){
-    stream.innerHTML = '<div style="font-size:7px;color:var(--text3);padding:4px;text-align:center">No recent activity recorded</div>';
-  } else {
-    recent.slice(-15).reverse().forEach(item => {
-      const ts = item.ts || '';
-      const desc = item.desc || (item.file ? `Edited ${item.file}` : 'Activity');
-      const detail = item.detail || '';
-      stream.innerHTML += `<div class="peek-stream-item"><span class="peek-stream-t">${ts}</span><span class="peek-stream-f">${escapeHtml(desc)}</span></div>`;
-    });
-  }
-
-  document.getElementById('peek-empty').style.display = 'none';
-  document.getElementById('peek-content').style.display = 'block';
+function escapeHtml(t){
+  const d = document.createElement('div');
+  d.textContent = t;
+  return d.innerHTML;
 }
 
 function hexToRgb(h){
@@ -1282,10 +1362,62 @@ function hexToRgb(h){
   return parseInt(h.substring(0,2),16)+','+parseInt(h.substring(2,4),16)+','+parseInt(h.substring(4,6),16);
 }
 
-function escapeHtml(t){
-  const d = document.createElement('div');
-  d.textContent = t;
-  return d.innerHTML;
+/* ---------- GLOBAL ACTIVITY FEED (HQ mode) ---------- */
+let globalFeedEntries = [];
+function updateGlobalFeed(){
+  const entries = [];
+  const rooms = Object.keys(roomData).filter(k=>k!=='hq'&&k!=='default');
+  rooms.forEach(rid => {
+    const room = roomData[rid];
+    if(!room || !room.agents) return;
+    const roomCol = roomColors[rooms.indexOf(rid) % roomColors.length];
+    room.agents.forEach(agent => {
+      const acts = agent.recentActivity || agent.activityLog || [];
+      acts.forEach(item => {
+        const ts = item.ts || '';
+        const desc = item.desc || (item.file ? 'Edited '+item.file : 'Activity');
+        entries.push({
+          ts,
+          sortKey: item.sortKey || item.ts || '',
+          room: room.name || rid,
+          roomId: rid,
+          roomColor: roomCol,
+          agent: agent.name || agent.id,
+          desc
+        });
+      });
+    });
+  });
+  // Sort newest first (by timestamp descending)
+  entries.sort((a,b) => {
+    if(a.sortKey > b.sortKey) return -1;
+    if(a.sortKey < b.sortKey) return 1;
+    return 0;
+  });
+  globalFeedEntries = entries.slice(0, 100);
+}
+
+function renderLogFeed(){
+  const el = document.getElementById('p-log');
+  if(currentRoom === 'hq' && globalFeedEntries.length > 0){
+    // HQ mode: show global activity feed
+    el.innerHTML = globalFeedEntries.map(e => {
+      const t = e.ts || '--:--';
+      return `<div class="log-line">
+        <span class="log-t">[${t}]</span>
+        <span class="log-agent" style="color:${e.roomColor}">[${e.room}]</span>
+        <span class="log-agent" style="color:${e.roomColor}">${e.agent}</span>
+        <span class="log-msg">:: ${escapeHtml(e.desc)}</span>
+      </div>`;
+    }).join('');
+  } else {
+    // Room mode: show system log
+    el.innerHTML = logs.map(l => `<div class="log-line">
+      <span class="log-t">${l.t}</span>
+      <span class="log-agent" style="color:${l.color}">${l.agent}</span>
+      <span class="log-msg">${l.msg}</span>
+    </div>`).join('');
+  }
 }
 
 /* ---------- CLOCK + METRICS ---------- */
@@ -1345,11 +1477,15 @@ function trigger(type){
 
 /* ---------- PUBLIC API ---------- */
 window.bukimind={
-  trigger, inspect, log, switchTab, switchRoom, goHome:()=>switchRoom('hq'),
+  trigger, log, switchTab, switchRoom, goHome:()=>switchRoom('hq'),
+  inspect: showAgent,
   openPeek,
+  showAgent,
   updateAgent(id,patch){
     const a=activeById[id]; if(!a) return;
     Object.assign(a,patch); renderChips();
+    // Re-render agent detail if this agent is currently shown
+    if(currentAgentId===id) showAgent(id);
     if(patch.status==='working'&&(a.state==='idle')){
       a.goTo(a.seatX,a.seatY,()=>{a.state='working';a.seated=true;a.facing='up';});
     }
@@ -1640,7 +1776,7 @@ async function pollHermes(){
     // Update agents in current room
     if(currentRoom !== 'hq' && roomData[currentRoom]){
       const defs = roomData[currentRoom].agents || [];
-      let peekDirty = false;
+      let agentDetailDirty = false;
       defs.forEach(x=>{
         const a=activeById[x.id];
         if(!a) return; // will be rebuilt on next switch if needed
@@ -1654,21 +1790,22 @@ async function pollHermes(){
           }
           if(x.status==='done'){ a.setBubble('Done ✓',3000); }
         }
-        // Sync peek data
+        // Sync agent detail data
         if(x.activity!==undefined) a.activity=x.activity;
         if(x.currentFile!==undefined) a.currentFile=x.currentFile;
         if(x.action!==undefined) a.action=x.action;
         if(x.snippet!==undefined) a.snippet=x.snippet;
         if(x.lastActive!==undefined) a.lastActive=x.lastActive;
-        if(x.recentActivity!==undefined) a.recentActivity=x.recentActivity;
-        if(x.currentFile || x.snippet) peekDirty = true;
+        if(x.recentActivity!==undefined) {
+          a.recentActivity=x.recentActivity;
+          a.activityLog=x.recentActivity; // alias
+        }
+        if(x.currentFile || x.snippet || x.recentActivity) agentDetailDirty = true;
       });
       renderChips();
-      if(currentInspect) inspect(currentInspect);
-      // Refresh peek if target agent's data changed
-      if(peekDirty && peekTarget){
-        const updatedDef = (roomData[currentRoom]?.agents||[]).find(a=>a.id===peekTarget.agent_id);
-        if(updatedDef) renderPeek(updatedDef, roomData[currentRoom]);
+      // Refresh agent detail panel if the currently viewed agent has new data
+      if(agentDetailDirty && currentAgentId && activeById[currentAgentId]){
+        showAgent(currentAgentId);
       }
     }
     
@@ -1678,6 +1815,10 @@ async function pollHermes(){
     // Update metrics
     updateMetrics();
     updateCustomAgentsRoom();
+    
+    // Update global feed (for HQ mode)
+    updateGlobalFeed();
+    renderLogFeed();
     
     // Handle desk delivery animation
     if(data.desk_delivery && currentRoom !== 'hq'){
@@ -1704,6 +1845,123 @@ async function pollHermes(){
   }catch(e){ /* feed not ready */ }
 }
 
+/* ---------- WEB SOCKET CLIENT (Live Updates) ---------- */
+let wsReconnectDelay = 1; // seconds, doubles on each failure
+let wsAttempts = 0;
+let ws = null;
+
+function connectWS(){
+  if(ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+  
+  // Try known event server endpoints
+  const urls = [
+    'wss://office-events.bookistudios.com/ws',
+    'wss://office-events.bukimind.pages.dev/ws',
+    'ws://127.0.0.1:4321/ws'
+  ];
+  
+  function tryConnect(idx){
+    if(idx >= urls.length){
+      // All URLs failed — schedule retry with backoff
+      const delay = Math.min(wsReconnectDelay, 30);
+      setTimeout(connectWS, delay * 1000);
+      wsReconnectDelay = Math.min(wsReconnectDelay * 2, 30);
+      return;
+    }
+    
+    try {
+      const socket = new WebSocket(urls[idx]);
+      socket.onopen = () => {
+        ws = socket;
+        wsReconnectDelay = 1;
+        wsAttempts = 0;
+        log('WS', 'Live connection established', C.green);
+      };
+      socket.onmessage = (ev) => {
+        try {
+          const data = JSON.parse(ev.data);
+          handleWSEvent(data);
+        } catch(e){
+          // Try handling as plain text
+          if(typeof ev.data === 'string' && ev.data.startsWith('{')){
+            try {
+              handleWSEvent(JSON.parse(ev.data));
+            } catch(e2){}
+          }
+        }
+      };
+      socket.onerror = () => {
+        // Will trigger onclose
+      };
+      socket.onclose = () => {
+        if(ws === socket){
+          ws = null;
+          const delay = Math.min(wsReconnectDelay, 30);
+          setTimeout(connectWS, delay * 1000);
+          wsReconnectDelay = Math.min(wsReconnectDelay * 2, 30);
+          wsAttempts++;
+        }
+      };
+    } catch(e){
+      tryConnect(idx + 1);
+    }
+  }
+  
+  tryConnect(0);
+}
+
+function handleWSEvent(data){
+  // Merge event data into roomData
+  if(data.type === 'agent_update' || data.agent){
+    // Single agent update
+    const agentId = data.agent || data.agent_id;
+    const roomId = data.room || data.room_id || currentRoom;
+    if(!roomData[roomId]) return;
+    const defs = roomData[roomId].agents || [];
+    const def = defs.find(a => a.id === agentId);
+    if(def){
+      // Update agent fields
+      ['status','task','output','activity','currentFile','action','snippet','lastActive','recentActivity'].forEach(f => {
+        if(data[f] !== undefined) def[f] = data[f];
+      });
+      // If this agent is in the current room, update live agent too
+      if(roomId === currentRoom && activeById[agentId]){
+        const a = activeById[agentId];
+        Object.assign(a, data);
+        renderChips();
+        if(currentAgentId === agentId) showAgent(agentId);
+      }
+      // Update global feed
+      updateGlobalFeed();
+      renderLogFeed();
+    }
+  } else if(data.type === 'room_update' || data.room_data){
+    // Full room update
+    const rid = data.room || data.room_id;
+    if(rid && data.room_data){
+      roomData[rid] = data.room_data;
+    } else if(data.rooms){
+      roomData = data.rooms;
+    }
+    updateGlobalFeed();
+    renderLogFeed();
+    renderRoomBar();
+    if(currentRoom !== 'hq' && roomData[currentRoom]){
+      buildAgentsFromRoom(currentRoom);
+      renderChips();
+    }
+  } else if(data.event || data.msg){
+    // Simple event log
+    const agent = data.agent || data.from || 'WS';
+    const msg = data.event || data.msg || data.description || 'Event received';
+    const col = data.color || data.roomColor || C.cyan;
+    log(agent, msg, col);
+  }
+}
+
+// Start WebSocket connection after a short delay
+setTimeout(connectWS, 2000);
+
 /* ---------- BOOT ---------- */
 rebuildWalkGrid();
 setupCustomAgentsRoom();
@@ -1715,6 +1973,25 @@ setInterval(pollHermes, 5000);
 renderRoomBar();
 buildAgentsFromRoom('hq');
 rebuildBlocked();
+
+// Initial log feed render
+setTimeout(renderLogFeed, 100);
+
+// Mobile: tap agent bar pull-up tab to open
+document.addEventListener('click', function(e){
+  const bar = document.getElementById('agent-bar');
+  if(!bar || bar.classList.contains('hidden')) return;
+  // Check if click is on the exposed pull-up tab (::after pseudo element area)
+  if(window.innerWidth <= 768){
+    const rect = bar.getBoundingClientRect();
+    const visibleHeight = 22; // matches the pull-up CSS
+    if(e.clientY >= rect.top && e.clientY <= rect.top + visibleHeight + 8){
+      bar.classList.toggle('open');
+    } else if(bar.classList.contains('open') && !bar.contains(e.target)){
+      bar.classList.remove('open');
+    }
+  }
+});
 </script>
 </body>
 </html>
